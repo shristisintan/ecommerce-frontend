@@ -13,17 +13,22 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { useAuth } from "../../context/AuthContext";
+import {
+  useAuth,
+} from "../../context/AuthContext";
 
 const LoginPage = () => {
   const navigate =
     useNavigate();
 
-  const { login } =
-    useAuth();
+  const {
+    login,
+  } = useAuth();
 
-  const [email, setEmail] =
-    useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
   const [
     password,
@@ -35,11 +40,15 @@ const LoginPage = () => {
     setShowPassword,
   ] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
   const handleSubmit =
     async (
@@ -51,20 +60,54 @@ const LoginPage = () => {
         setLoading(true);
         setError("");
 
-        await login({
-          email:
-            email
-              .trim()
-              .toLowerCase(),
+        const loggedInUser =
+          await login({
+            email:
+              email
+                .trim()
+                .toLowerCase(),
 
-          password,
-        });
+            password,
+          });
 
-        navigate("/");
-      } catch (error) {
+        switch (
+          loggedInUser.role
+        ) {
+          case "ADMIN":
+            navigate(
+              "/admin",
+              {
+                replace: true,
+              }
+            );
+            break;
+
+          case "MERCHANT":
+            navigate(
+              "/merchant",
+              {
+                replace: true,
+              }
+            );
+            break;
+
+          case "BUYER":
+          default:
+            navigate(
+              "/",
+              {
+                replace: true,
+              }
+            );
+            break;
+        }
+      } catch (
+        loginError
+      ) {
         setError(
-          error instanceof Error
-            ? error.message
+          loginError instanceof
+            Error
+            ? loginError.message
             : "Unable to sign in."
         );
       } finally {
@@ -75,7 +118,8 @@ const LoginPage = () => {
   return (
     <main className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6">
       <div className="mx-auto grid min-h-[calc(100vh-48px)] max-w-[1200px] overflow-hidden rounded-[28px] bg-white shadow-[0_20px_70px_rgba(0,0,0,0.08)] lg:grid-cols-2">
-        {/* Brand panel */}
+        {/* Brand Panel */}
+
         <section className="hidden bg-black p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <Link
             to="/"
@@ -108,14 +152,18 @@ const LoginPage = () => {
           </p>
         </section>
 
-        {/* Form */}
+        {/* Login Form */}
+
         <section className="flex items-center justify-center px-6 py-12 sm:px-12">
           <div className="w-full max-w-[420px]">
             <Link
               to="/"
               className="mb-10 inline-flex items-center gap-2 text-sm text-black/50 transition hover:text-black lg:hidden"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft
+                size={16}
+              />
+
               Back to store
             </Link>
 
@@ -134,13 +182,17 @@ const LoginPage = () => {
 
             <p className="mt-3 text-sm leading-6 text-black/50">
               Sign in to continue shopping
-              and manage your orders.
+              or manage your account.
             </p>
 
             <form
-              onSubmit={handleSubmit}
+              onSubmit={
+                handleSubmit
+              }
               className="mt-9"
             >
+              {/* Email */}
+
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Email
@@ -150,17 +202,22 @@ const LoginPage = () => {
                   type="email"
                   required
                   autoComplete="email"
-                  value={email}
-                  onChange={(event) =>
+                  value={
+                    email
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setEmail(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   }
                   placeholder="you@example.com"
                   className="h-13 w-full rounded-2xl border border-black/10 px-4 outline-none transition focus:border-black/40"
                 />
               </div>
+
+              {/* Password */}
 
               <div className="mt-5">
                 <label className="mb-2 block text-sm font-medium">
@@ -183,9 +240,7 @@ const LoginPage = () => {
                       event
                     ) =>
                       setPassword(
-                        event
-                          .target
-                          .value
+                        event.target.value
                       )
                     }
                     placeholder="Enter your password"
@@ -201,8 +256,10 @@ const LoginPage = () => {
                     }
                     onClick={() =>
                       setShowPassword(
-                        (value) =>
-                          !value
+                        (
+                          current
+                        ) =>
+                          !current
                       )
                     }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40"
@@ -220,15 +277,21 @@ const LoginPage = () => {
                 </div>
               </div>
 
+              {/* Error */}
+
               {error && (
                 <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
                   {error}
                 </div>
               )}
 
+              {/* Submit */}
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading
+                }
                 className="mt-7 h-13 w-full rounded-full bg-black text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading

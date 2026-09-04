@@ -2,6 +2,10 @@ import type {
   CartResponse,
 } from "../types/cart";
 
+import {
+  authenticatedFetch,
+} from "./apiClient";
+
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api/v1";
@@ -16,17 +20,14 @@ interface UpdateCartInput {
   quantity: number;
 }
 
-const getToken = () => {
-  return localStorage.getItem(
-    "access_token"
-  );
-};
-
 const request = async (
   url: string,
   options: RequestInit = {}
 ) => {
-  const token = getToken();
+  const token =
+    localStorage.getItem(
+      "access_token"
+    );
 
   if (!token) {
     throw new Error(
@@ -34,22 +35,30 @@ const request = async (
     );
   }
 
-  const response = await fetch(
-    `${API_URL}${url}`,
-    {
-      ...options,
+  const headers =
+    new Headers(
+      options.headers
+    );
 
-      headers: {
-        "Content-Type":
-          "application/json",
+  /*
+   * Cart requests with a body
+   * use JSON.
+   */
+  if (options.body) {
+    headers.set(
+      "Content-Type",
+      "application/json"
+    );
+  }
 
-        Authorization:
-          `Bearer ${token}`,
-
-        ...options.headers,
-      },
-    }
-  );
+  const response =
+    await authenticatedFetch(
+      `${API_URL}${url}`,
+      {
+        ...options,
+        headers,
+      }
+    );
 
   const result =
     await response.json();
@@ -67,10 +76,20 @@ const request = async (
   return result;
 };
 
+/* =========================================================
+   GET CART
+========================================================= */
+
 export const getCart =
   async (): Promise<CartResponse> => {
-    return request("/cart");
+    return request(
+      "/cart"
+    );
   };
+
+/* =========================================================
+   ADD PRODUCT TO CART
+========================================================= */
 
 export const addToCart =
   async ({
@@ -82,13 +101,18 @@ export const addToCart =
       {
         method: "POST",
 
-        body: JSON.stringify({
-          productId,
-          quantity,
-        }),
+        body:
+          JSON.stringify({
+            productId,
+            quantity,
+          }),
       }
     );
   };
+
+/* =========================================================
+   UPDATE CART ITEM
+========================================================= */
 
 export const updateCartItem =
   async ({
@@ -100,12 +124,17 @@ export const updateCartItem =
       {
         method: "PATCH",
 
-        body: JSON.stringify({
-          quantity,
-        }),
+        body:
+          JSON.stringify({
+            quantity,
+          }),
       }
     );
   };
+
+/* =========================================================
+   REMOVE CART ITEM
+========================================================= */
 
 export const removeCartItem =
   async (
@@ -118,6 +147,10 @@ export const removeCartItem =
       }
     );
   };
+
+/* =========================================================
+   CLEAR CART
+========================================================= */
 
 export const clearCart =
   async (): Promise<CartResponse> => {

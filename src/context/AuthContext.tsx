@@ -29,8 +29,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
 
   login: (
-    input: LoginInput
-  ) => Promise<void>;
+  input: LoginInput
+) => Promise<AuthUser>;
 
   registerBuyer: (
     input: RegisterBuyerInput
@@ -74,6 +74,10 @@ export const AuthProvider = ({
     setLoading,
   ] = useState(true);
 
+  /*
+   * Save access token both
+   * in localStorage and React state.
+   */
   const saveToken = (
     token: string
   ) => {
@@ -88,16 +92,16 @@ export const AuthProvider = ({
   };
 
   /*
+   * Clears authentication only.
+   *
    * IMPORTANT:
+   * Do NOT remove pending_order_id
+   * here.
    *
-   * This should clear authentication only.
-   *
-   * Do NOT remove pending_order_id here
-   * because this function is also used
-   * when restoring authentication fails.
-   *
-   * Payment recovery must still be able
-   * to access the existing pending order.
+   * If authentication temporarily
+   * fails while a payment is pending,
+   * we still need the existing order
+   * for payment recovery.
    */
   const clearAuth = () => {
     localStorage.removeItem(
@@ -109,7 +113,21 @@ export const AuthProvider = ({
   };
 
   /*
-   * Restore login after browser refresh.
+   * =====================================================
+   * RESTORE SESSION AFTER PAGE REFRESH
+   * =====================================================
+   *
+   * Flow:
+   *
+   * Existing access token
+   *       ↓
+   * Try /auth/me
+   *       ↓
+   * If expired
+   *       ↓
+   * Try refresh token
+   *       ↓
+   * Store new access token
    */
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +143,7 @@ export const AuthProvider = ({
             );
 
           /*
-           * First try the existing
+           * First try existing
            * access token.
            */
           if (token) {
@@ -154,14 +172,13 @@ export const AuthProvider = ({
                * Access token may
                * have expired.
                *
-               * Try refresh token
-               * before logging out.
+               * Continue to refresh.
                */
             }
           }
 
           /*
-           * Rotate refresh token.
+           * Use refresh-token cookie.
            */
           const refreshed =
             await authApi
@@ -185,8 +202,8 @@ export const AuthProvider = ({
           );
 
           /*
-           * Some backend responses
-           * already return user info.
+           * Refresh response already
+           * contains the user.
            */
           if (
             refreshed.user
@@ -199,8 +216,8 @@ export const AuthProvider = ({
           }
 
           /*
-           * Otherwise request /auth/me
-           * using the new access token.
+           * Fallback:
+           * load user from /auth/me.
            */
           const currentUser =
             await authApi
@@ -239,54 +256,149 @@ export const AuthProvider = ({
     };
   }, []);
 
-  const login = async (
-    input: LoginInput
-  ) => {
-    setLoading(true);
+  /*
+   * =====================================================
+   * LISTEN FOR AUTOMATIC API TOKEN REFRESH
+   * =====================================================
+   *
+   * apiClient.ts dispatches:
+   *
+   * auth:token-refreshed
+   *
+   * when a 401 is successfully
+   * recovered using the refresh token.
+   *
+   * It dispatches:
+   *
+   * auth:session-expired
+   *
+   * only when the refresh token
+   * itself is no longer valid.
+   */
+  useEffect(() => {
+    const handleTokenRefreshed = (
+      event: Event
+    ) => {
+      const customEvent =
+        event as CustomEvent<string>;
 
-    try {
-      const result =
-        await authApi.login(
-          input
-        );
+      const newToken =
+        customEvent.detail;
 
-      const token =
-        result.accessToken;
-
-      if (!token) {
-        throw new Error(
-          "Login response did not contain an access token."
-        );
-      }
-
-      saveToken(
-        token
-      );
-
-      if (
-        result.user
-      ) {
-        setUser(
-          result.user
-        );
-
+      if (!newToken) {
         return;
       }
 
-      const currentUser =
+      /*
+       * apiClient already updates
+       * localStorage.
+       *
+       * We update React state here
+       * so AuthContext stays synced.
+       */
+      setAccessToken(
+        newToken
+      );
+    };
+
+    const handleSessionExpired =
+      () => {
+        /*
+         * Refresh token has also
+         * expired or become invalid.
+         *
+         * Now the user must log in.
+         */
+        localStorage.removeItem(
+          TOKEN_KEY
+        );
+
+        setAccessToken(null);
+        setUser(null);
+        setLoading(false);
+      };
+
+    window.addEventListener(
+      "auth:token-refreshed",
+      handleTokenRefreshed
+    );
+
+    window.addEventListener(
+      "auth:session-expired",
+      handleSessionExpired
+    );
+
+    return () => {
+      window.removeEventListener(
+        "auth:token-refreshed",
+        handleTokenRefreshed
+      );
+
+      window.removeEventListener(
+        "auth:session-expired",
+        handleSessionExpired
+      );
+    };
+  }, []);
+
+  /*
+   * =====================================================
+   * LOGIN
+   * =====================================================
+   */
+  const login = async (
+  input: LoginInput
+): Promise<AuthUser> => {
+  setLoading(true);
+
+  try {
+    const result =
+      await authApi.login(
+        input
+      );
+
+    const token =
+      result.accessToken;
+
+    if (!token) {
+      throw new Error(
+        "Login response did not contain an access token."
+      );
+    }
+
+    saveToken(
+      token
+    );
+
+    let loggedInUser:
+      AuthUser;
+
+    if (result.user) {
+      loggedInUser =
+        result.user;
+    } else {
+      loggedInUser =
         await authApi
           .getCurrentUser(
             token
           );
-
-      setUser(
-        currentUser
-      );
-    } finally {
-      setLoading(false);
     }
-  };
 
+    setUser(
+      loggedInUser
+    );
+
+    return loggedInUser;
+  } finally {
+    setLoading(false);
+  }
+};
+
+  /*
+   * =====================================================
+   * BUYER REGISTRATION
+   * =====================================================
+   */
   const registerBuyer =
     async (
       input: RegisterBuyerInput
@@ -337,6 +449,11 @@ export const AuthProvider = ({
       }
     };
 
+  /*
+   * =====================================================
+   * LOGOUT
+   * =====================================================
+   */
   const logout =
     async () => {
       try {
@@ -345,9 +462,9 @@ export const AuthProvider = ({
         );
       } finally {
         /*
-         * User explicitly logged out,
-         * so now it is safe to clear
-         * checkout-related local data.
+         * Explicit logout means we
+         * can clear both authentication
+         * and unfinished checkout data.
          */
         clearAuth();
 
