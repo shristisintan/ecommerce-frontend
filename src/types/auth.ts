@@ -23,6 +23,15 @@ export interface RegisterBuyerInput {
   password: string;
 }
 
+export interface RegisterMerchantInput {
+  name: string;
+  email: string;
+  password: string;
+
+  storeName: string;
+  storeSlug: string;
+}
+
 export interface AuthData {
   accessToken: string;
   user?: AuthUser;

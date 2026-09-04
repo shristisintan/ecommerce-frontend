@@ -1,5 +1,7 @@
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CircleOff,
   Pencil,
   Plus,
@@ -30,6 +32,12 @@ import {
 import type {
   Category,
 } from "../../types/category";
+
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
+const PAGE_SIZE = 5;
 
 /* =========================================================
    HELPERS
@@ -75,6 +83,11 @@ const AdminCategoriesPage = () => {
     search,
     setSearch,
   ] = useState("");
+
+  const [
+    page,
+    setPage,
+  ] = useState(1);
 
   const [
     modalOpen,
@@ -191,6 +204,70 @@ const AdminCategoriesPage = () => {
     ]);
 
   /* ======================================================
+     PAGINATION
+  ====================================================== */
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        filteredCategories.length /
+          PAGE_SIZE
+      )
+    );
+
+  const safePage =
+    Math.min(
+      page,
+      totalPages
+    );
+
+  const startIndex =
+    (safePage - 1) *
+    PAGE_SIZE;
+
+  const endIndex =
+    Math.min(
+      startIndex +
+        PAGE_SIZE,
+      filteredCategories.length
+    );
+
+  const paginatedCategories =
+    useMemo(
+      () =>
+        filteredCategories.slice(
+          startIndex,
+          startIndex +
+            PAGE_SIZE
+        ),
+      [
+        filteredCategories,
+        startIndex,
+      ]
+    );
+
+  /*
+   * If data changes while the
+   * administrator is on the last
+   * page, ensure the selected page
+   * still exists.
+   */
+  useEffect(() => {
+    if (
+      page >
+      totalPages
+    ) {
+      setPage(
+        totalPages
+      );
+    }
+  }, [
+    page,
+    totalPages,
+  ]);
+
+  /* ======================================================
      CATEGORY COUNTS
   ====================================================== */
 
@@ -205,6 +282,28 @@ const AdminCategoriesPage = () => {
   const inactiveCount =
     categories.length -
     activeCount;
+
+  /* ======================================================
+     SEARCH
+  ====================================================== */
+
+  const handleSearchChange = (
+    value: string
+  ) => {
+    setSearch(value);
+
+    /*
+     * Always return to first
+     * page for a new search.
+     */
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+
+    setPage(1);
+  };
 
   /* ======================================================
      MODAL HELPERS
@@ -328,6 +427,17 @@ const AdminCategoriesPage = () => {
       }
 
       if (
+        cleanedSlug.length <
+        2
+      ) {
+        setError(
+          "Category slug must contain at least 2 characters."
+        );
+
+        return;
+      }
+
+      if (
         !/^[a-z0-9-]+$/.test(
           cleanedSlug
         )
@@ -367,12 +477,15 @@ const AdminCategoriesPage = () => {
                 cleanedSlug,
             }
           );
+
+          /*
+           * Newly created records
+           * appear near the beginning,
+           * so return to first page.
+           */
+          setPage(1);
         }
 
-        /*
-         * Close directly after
-         * successful save.
-         */
         resetModal();
 
         await loadCategories();
@@ -619,7 +732,7 @@ const AdminCategoriesPage = () => {
               onChange={(
                 event
               ) =>
-                setSearch(
+                handleSearchChange(
                   event.target
                     .value
                 )
@@ -666,8 +779,8 @@ const AdminCategoriesPage = () => {
             {search && (
               <button
                 type="button"
-                onClick={() =>
-                  setSearch("")
+                onClick={
+                  clearSearch
                 }
                 className="text-xs font-semibold text-brand-700 transition hover:text-brand-800"
               >
@@ -675,6 +788,10 @@ const AdminCategoriesPage = () => {
               </button>
             )}
           </div>
+
+          {/* =================================================
+              TABLE CONTENT
+          ================================================= */}
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px]">
@@ -746,7 +863,7 @@ const AdminCategoriesPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredCategories.map(
+                  paginatedCategories.map(
                     (
                       category
                     ) => (
@@ -847,8 +964,6 @@ const AdminCategoriesPage = () => {
                                 />
                               </button>
                             ) : (
-                              /* Inactive */
-
                               <button
                                 type="button"
                                 title="Reactivate category"
@@ -878,6 +993,101 @@ const AdminCategoriesPage = () => {
               </tbody>
             </table>
           </div>
+
+          {/* =================================================
+              PAGINATION
+          ================================================= */}
+
+          {!loading &&
+            filteredCategories.length >
+              0 && (
+              <div className="flex flex-col gap-4 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Result Count */}
+
+                <p className="text-xs text-primary-400">
+                  Showing{" "}
+                  <span className="font-semibold text-primary-700">
+                    {startIndex +
+                      1}
+                  </span>
+                  {" – "}
+                  <span className="font-semibold text-primary-700">
+                    {endIndex}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-primary-700">
+                    {
+                      filteredCategories.length
+                    }
+                  </span>{" "}
+                  categories
+                </p>
+
+                {/* Controls */}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    disabled={
+                      safePage <=
+                      1
+                    }
+                    onClick={() =>
+                      setPage(
+                        (
+                          current
+                        ) =>
+                          Math.max(
+                            current -
+                              1,
+                            1
+                          )
+                      )
+                    }
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-primary-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft
+                      size={16}
+                    />
+                  </button>
+
+                  <span className="min-w-[90px] text-center text-xs font-semibold text-primary-600">
+                    Page{" "}
+                    {safePage} of{" "}
+                    {
+                      totalPages
+                    }
+                  </span>
+
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    disabled={
+                      safePage >=
+                      totalPages
+                    }
+                    onClick={() =>
+                      setPage(
+                        (
+                          current
+                        ) =>
+                          Math.min(
+                            current +
+                              1,
+                            totalPages
+                          )
+                      )
+                    }
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-primary-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronRight
+                      size={16}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
         </section>
       </div>
 

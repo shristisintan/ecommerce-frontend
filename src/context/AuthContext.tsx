@@ -15,7 +15,12 @@ import type {
   AuthUser,
   LoginInput,
   RegisterBuyerInput,
+  RegisterMerchantInput,
 } from "../types/auth";
+
+/* =========================================================
+   CONTEXT TYPE
+========================================================= */
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -29,15 +34,23 @@ interface AuthContextValue {
   isAuthenticated: boolean;
 
   login: (
-  input: LoginInput
-) => Promise<AuthUser>;
+    input: LoginInput
+  ) => Promise<AuthUser>;
 
   registerBuyer: (
     input: RegisterBuyerInput
   ) => Promise<void>;
 
+  registerMerchant: (
+    input: RegisterMerchantInput
+  ) => Promise<void>;
+
   logout: () => Promise<void>;
 }
+
+/* =========================================================
+   CONTEXT
+========================================================= */
 
 const AuthContext =
   createContext<
@@ -46,6 +59,10 @@ const AuthContext =
 
 const TOKEN_KEY =
   "access_token";
+
+/* =========================================================
+   PROVIDER
+========================================================= */
 
 export const AuthProvider = ({
   children,
@@ -74,10 +91,10 @@ export const AuthProvider = ({
     setLoading,
   ] = useState(true);
 
-  /*
-   * Save access token both
-   * in localStorage and React state.
-   */
+  /* ======================================================
+     SAVE TOKEN
+  ====================================================== */
+
   const saveToken = (
     token: string
   ) => {
@@ -91,44 +108,24 @@ export const AuthProvider = ({
     );
   };
 
-  /*
-   * Clears authentication only.
-   *
-   * IMPORTANT:
-   * Do NOT remove pending_order_id
-   * here.
-   *
-   * If authentication temporarily
-   * fails while a payment is pending,
-   * we still need the existing order
-   * for payment recovery.
-   */
+  /* ======================================================
+     CLEAR AUTH
+  ====================================================== */
+
   const clearAuth = () => {
     localStorage.removeItem(
       TOKEN_KEY
     );
 
     setAccessToken(null);
+
     setUser(null);
   };
 
-  /*
-   * =====================================================
-   * RESTORE SESSION AFTER PAGE REFRESH
-   * =====================================================
-   *
-   * Flow:
-   *
-   * Existing access token
-   *       ↓
-   * Try /auth/me
-   *       ↓
-   * If expired
-   *       ↓
-   * Try refresh token
-   *       ↓
-   * Store new access token
-   */
+  /* ======================================================
+     RESTORE SESSION
+  ====================================================== */
+
   useEffect(() => {
     let cancelled = false;
 
@@ -143,9 +140,10 @@ export const AuthProvider = ({
             );
 
           /*
-           * First try existing
+           * First try current
            * access token.
            */
+
           if (token) {
             try {
               const currentUser =
@@ -170,16 +168,20 @@ export const AuthProvider = ({
             } catch {
               /*
                * Access token may
-               * have expired.
+               * be expired.
                *
-               * Continue to refresh.
+               * Continue to
+               * refresh token.
                */
             }
           }
 
           /*
-           * Use refresh-token cookie.
+           * Attempt refresh using
+           * httpOnly refresh-token
+           * cookie.
            */
+
           const refreshed =
             await authApi
               .refreshAccessToken();
@@ -202,9 +204,10 @@ export const AuthProvider = ({
           );
 
           /*
-           * Refresh response already
-           * contains the user.
+           * Refresh normally
+           * contains user data.
            */
+
           if (
             refreshed.user
           ) {
@@ -216,9 +219,9 @@ export const AuthProvider = ({
           }
 
           /*
-           * Fallback:
-           * load user from /auth/me.
+           * Fallback to /me.
            */
+
           const currentUser =
             await authApi
               .getCurrentUser(
@@ -256,25 +259,10 @@ export const AuthProvider = ({
     };
   }, []);
 
-  /*
-   * =====================================================
-   * LISTEN FOR AUTOMATIC API TOKEN REFRESH
-   * =====================================================
-   *
-   * apiClient.ts dispatches:
-   *
-   * auth:token-refreshed
-   *
-   * when a 401 is successfully
-   * recovered using the refresh token.
-   *
-   * It dispatches:
-   *
-   * auth:session-expired
-   *
-   * only when the refresh token
-   * itself is no longer valid.
-   */
+  /* ======================================================
+     LISTEN FOR API TOKEN EVENTS
+  ====================================================== */
+
   useEffect(() => {
     const handleTokenRefreshed = (
       event: Event
@@ -289,13 +277,6 @@ export const AuthProvider = ({
         return;
       }
 
-      /*
-       * apiClient already updates
-       * localStorage.
-       *
-       * We update React state here
-       * so AuthContext stays synced.
-       */
       setAccessToken(
         newToken
       );
@@ -303,18 +284,14 @@ export const AuthProvider = ({
 
     const handleSessionExpired =
       () => {
-        /*
-         * Refresh token has also
-         * expired or become invalid.
-         *
-         * Now the user must log in.
-         */
         localStorage.removeItem(
           TOKEN_KEY
         );
 
         setAccessToken(null);
+
         setUser(null);
+
         setLoading(false);
       };
 
@@ -341,64 +318,62 @@ export const AuthProvider = ({
     };
   }, []);
 
-  /*
-   * =====================================================
-   * LOGIN
-   * =====================================================
-   */
+  /* ======================================================
+     LOGIN
+  ====================================================== */
+
   const login = async (
-  input: LoginInput
-): Promise<AuthUser> => {
-  setLoading(true);
+    input: LoginInput
+  ): Promise<AuthUser> => {
+    setLoading(true);
 
-  try {
-    const result =
-      await authApi.login(
-        input
+    try {
+      const result =
+        await authApi.login(
+          input
+        );
+
+      const token =
+        result.accessToken;
+
+      if (!token) {
+        throw new Error(
+          "Login response did not contain an access token."
+        );
+      }
+
+      saveToken(
+        token
       );
 
-    const token =
-      result.accessToken;
+      let loggedInUser:
+        AuthUser;
 
-    if (!token) {
-      throw new Error(
-        "Login response did not contain an access token."
+      if (result.user) {
+        loggedInUser =
+          result.user;
+      } else {
+        loggedInUser =
+          await authApi
+            .getCurrentUser(
+              token
+            );
+      }
+
+      setUser(
+        loggedInUser
       );
+
+      return loggedInUser;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    saveToken(
-      token
-    );
+  /* ======================================================
+     BUYER REGISTRATION
+  ====================================================== */
 
-    let loggedInUser:
-      AuthUser;
-
-    if (result.user) {
-      loggedInUser =
-        result.user;
-    } else {
-      loggedInUser =
-        await authApi
-          .getCurrentUser(
-            token
-          );
-    }
-
-    setUser(
-      loggedInUser
-    );
-
-    return loggedInUser;
-  } finally {
-    setLoading(false);
-  }
-};
-
-  /*
-   * =====================================================
-   * BUYER REGISTRATION
-   * =====================================================
-   */
   const registerBuyer =
     async (
       input: RegisterBuyerInput
@@ -449,11 +424,64 @@ export const AuthProvider = ({
       }
     };
 
-  /*
-   * =====================================================
-   * LOGOUT
-   * =====================================================
-   */
+  /* ======================================================
+     MERCHANT REGISTRATION
+  ====================================================== */
+
+  const registerMerchant =
+    async (
+      input: RegisterMerchantInput
+    ) => {
+      setLoading(true);
+
+      try {
+        const result =
+          await authApi
+            .registerMerchant(
+              input
+            );
+
+        const token =
+          result.accessToken;
+
+        if (!token) {
+          throw new Error(
+            "Registration response did not contain an access token."
+          );
+        }
+
+        saveToken(
+          token
+        );
+
+        if (
+          result.user
+        ) {
+          setUser(
+            result.user
+          );
+
+          return;
+        }
+
+        const currentUser =
+          await authApi
+            .getCurrentUser(
+              token
+            );
+
+        setUser(
+          currentUser
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  /* ======================================================
+     LOGOUT
+  ====================================================== */
+
   const logout =
     async () => {
       try {
@@ -461,12 +489,13 @@ export const AuthProvider = ({
           accessToken
         );
       } finally {
-        /*
-         * Explicit logout means we
-         * can clear both authentication
-         * and unfinished checkout data.
-         */
         clearAuth();
+
+        /*
+         * Explicit logout can
+         * remove unfinished
+         * checkout information.
+         */
 
         localStorage.removeItem(
           "pending_order_id"
@@ -479,6 +508,10 @@ export const AuthProvider = ({
         setLoading(false);
       }
     };
+
+  /* ======================================================
+     AUTH STATE
+  ====================================================== */
 
   const isAuthenticated =
     Boolean(
@@ -496,6 +529,7 @@ export const AuthProvider = ({
 
         login,
         registerBuyer,
+        registerMerchant,
         logout,
       }}
     >
@@ -503,6 +537,10 @@ export const AuthProvider = ({
     </AuthContext.Provider>
   );
 };
+
+/* =========================================================
+   AUTH HOOK
+========================================================= */
 
 export const useAuth =
   (): AuthContextValue => {

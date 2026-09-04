@@ -3,11 +3,16 @@ import type {
   AuthUser,
   LoginInput,
   RegisterBuyerInput,
+  RegisterMerchantInput,
 } from "../types/auth";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api/v1";
+
+/* =========================================================
+   RESPONSE PARSER
+========================================================= */
 
 const parseResponse = async (
   response: Response
@@ -28,6 +33,10 @@ const parseResponse = async (
   return result;
 };
 
+/* =========================================================
+   LOGIN
+========================================================= */
+
 export const login = async (
   input: LoginInput
 ): Promise<AuthData> => {
@@ -43,7 +52,9 @@ export const login = async (
           "application/json",
       },
 
-      body: JSON.stringify(input),
+      body: JSON.stringify(
+        input
+      ),
     }
   );
 
@@ -55,28 +66,33 @@ export const login = async (
   return result.data;
 };
 
+/* =========================================================
+   BUYER REGISTRATION
+========================================================= */
+
 export const registerBuyer =
   async (
     input: RegisterBuyerInput
   ): Promise<AuthData> => {
-    const response = await fetch(
-      `${API_URL}/auth/register/buyer`,
-      {
-        method: "POST",
+    const response =
+      await fetch(
+        `${API_URL}/auth/register/buyer`,
+        {
+          method: "POST",
 
-        credentials:
-          "include",
+          credentials:
+            "include",
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-        body: JSON.stringify(
-          input
-        ),
-      }
-    );
+          body: JSON.stringify(
+            input
+          ),
+        }
+      );
 
     const result =
       await parseResponse(
@@ -86,24 +102,65 @@ export const registerBuyer =
     return result.data;
   };
 
+/* =========================================================
+   MERCHANT REGISTRATION
+========================================================= */
+
+export const registerMerchant =
+  async (
+    input: RegisterMerchantInput
+  ): Promise<AuthData> => {
+    const response =
+      await fetch(
+        `${API_URL}/auth/register/merchant`,
+        {
+          method: "POST",
+
+          credentials:
+            "include",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            input
+          ),
+        }
+      );
+
+    const result =
+      await parseResponse(
+        response
+      );
+
+    return result.data;
+  };
+
+/* =========================================================
+   CURRENT USER
+========================================================= */
+
 export const getCurrentUser =
   async (
     accessToken: string
   ): Promise<AuthUser> => {
-    const response = await fetch(
-      `${API_URL}/auth/me`,
-      {
-        method: "GET",
+    const response =
+      await fetch(
+        `${API_URL}/auth/me`,
+        {
+          method: "GET",
 
-        credentials:
-          "include",
+          credentials:
+            "include",
 
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
-      }
-    );
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`,
+          },
+        }
+      );
 
     const result =
       await parseResponse(
@@ -111,35 +168,37 @@ export const getCurrentUser =
       );
 
     /*
-     * Supports either:
+     * Supports:
      *
      * data: user
      *
-     * or:
+     * or
      *
      * data: {
-     *   user: user
+     *   user
      * }
      */
+
     return (
       result.data?.user ??
       result.data
     );
   };
 
+/* =========================================================
+   REFRESH TOKEN
+========================================================= */
+
 /*
- * Very important:
+ * React StrictMode can run
+ * effects more than once
+ * during development.
  *
- * React StrictMode may run effects
- * twice while developing.
- *
- * Since your backend ROTATES refresh
- * tokens, two simultaneous refresh
- * calls can cause problems.
- *
- * This ensures only one refresh request
- * can run at a time.
+ * Since the backend rotates
+ * refresh tokens, prevent
+ * simultaneous refresh calls.
  */
+
 let refreshPromise:
   | Promise<AuthData>
   | null = null;
@@ -156,7 +215,8 @@ export const refreshAccessToken =
           await fetch(
             `${API_URL}/auth/refresh`,
             {
-              method: "POST",
+              method:
+                "POST",
 
               credentials:
                 "include",
@@ -177,6 +237,10 @@ export const refreshAccessToken =
       refreshPromise = null;
     }
   };
+
+/* =========================================================
+   LOGOUT
+========================================================= */
 
 export const logout = async (
   accessToken?:

@@ -174,7 +174,9 @@ const Header = () => {
 
   return (
     <>
-      {/* Top bar */}
+      {/* =================================================
+          TOP BAR
+      ================================================= */}
 
       <div className="bg-brand-700">
         <Container className="flex min-h-8 items-center justify-center">
@@ -186,11 +188,13 @@ const Header = () => {
         </Container>
       </div>
 
-      {/* Main header */}
+      {/* =================================================
+          MAIN HEADER
+      ================================================= */}
 
       <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur-md">
         <Container className="flex h-[72px] items-center gap-5">
-          {/* Mobile menu */}
+          {/* Mobile Menu */}
 
           <button
             type="button"
@@ -219,7 +223,9 @@ const Header = () => {
             </span>
           </Link>
 
-          {/* Desktop navigation */}
+          {/* =================================================
+              DESKTOP NAVIGATION
+          ================================================= */}
 
           <nav className="hidden items-center gap-6 text-sm font-semibold text-primary-700 lg:flex">
             <Link
@@ -244,7 +250,9 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* Search */}
+          {/* =================================================
+              SEARCH
+          ================================================= */}
 
           <form
             onSubmit={
@@ -277,10 +285,12 @@ const Header = () => {
             </div>
           </form>
 
-          {/* Actions */}
+          {/* =================================================
+              ACTIONS
+          ================================================= */}
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-            {/* Mobile search */}
+            {/* Mobile Search */}
 
             <button
               type="button"
@@ -315,7 +325,7 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Cart */}
+            {/* Buyer Cart */}
 
             {isBuyer && (
               <Link
@@ -340,13 +350,17 @@ const Header = () => {
               </Link>
             )}
 
-            {/* User */}
+            {/* =================================================
+                AUTH STATE
+            ================================================= */}
 
             {authLoading ? (
               <div className="h-9 w-9 animate-pulse rounded-full bg-primary-100" />
             ) : isAuthenticated &&
               user ? (
               <div className="ml-1 flex items-center gap-2">
+                {/* User Info */}
+
                 <div className="hidden text-right xl:block">
                   <p className="max-w-[120px] truncate text-xs font-semibold text-primary-900">
                     {
@@ -361,11 +375,15 @@ const Header = () => {
                   </p>
                 </div>
 
+                {/* Avatar */}
+
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-700">
                   <UserRound
                     size={18}
                   />
                 </div>
+
+                {/* Logout */}
 
                 <button
                   type="button"
@@ -382,9 +400,13 @@ const Header = () => {
                 </button>
               </div>
             ) : (
+              /* =================================================
+                  DESKTOP SIGN IN
+              ================================================= */
+
               <Link
                 to="/login"
-                className="ml-1 rounded-full bg-primary-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="ml-1 inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-700"
               >
                 Sign In
               </Link>
@@ -392,7 +414,9 @@ const Header = () => {
           </div>
         </Container>
 
-        {/* Mobile search */}
+        {/* =================================================
+            MOBILE SEARCH
+        ================================================= */}
 
         {mobileSearchOpen && (
           <Container className="pb-4 md:hidden">
@@ -422,14 +446,16 @@ const Header = () => {
                   )
                 }
                 placeholder="Search products..."
-                className="w-full bg-transparent text-sm outline-none"
+                className="w-full bg-transparent text-sm text-primary-900 outline-none placeholder:text-text-muted"
               />
             </form>
           </Container>
         )}
       </header>
 
-      {/* Mobile drawer */}
+      {/* =====================================================
+          MOBILE DRAWER
+      ====================================================== */}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -449,6 +475,8 @@ const Header = () => {
           {/* Drawer */}
 
           <div className="relative flex h-full w-[84%] max-w-[330px] flex-col bg-white p-6 shadow-2xl">
+            {/* Drawer Header */}
+
             <div className="flex items-center justify-between">
               <Link
                 to="/"
@@ -481,7 +509,9 @@ const Header = () => {
               </button>
             </div>
 
-            {/* User */}
+            {/* =================================================
+                USER INFO
+            ================================================= */}
 
             {isAuthenticated &&
               user && (
@@ -508,7 +538,9 @@ const Header = () => {
                 </div>
               )}
 
-            {/* Navigation */}
+            {/* =================================================
+                MOBILE NAVIGATION
+            ================================================= */}
 
             <nav className="mt-7 flex flex-col">
               <Link
@@ -546,6 +578,8 @@ const Header = () => {
               >
                 Best Value
               </Link>
+
+              {/* Buyer Links */}
 
               {isBuyer && (
                 <>
@@ -595,12 +629,19 @@ const Header = () => {
               )}
             </nav>
 
-            {/* Logged out */}
+            {/* =================================================
+                LOGGED OUT ACTIONS
+            ================================================= */}
 
             {!isAuthenticated && (
               <div className="mt-7 grid gap-3">
                 <Link
                   to="/login"
+                  onClick={() =>
+                    setMobileOpen(
+                      false
+                    )
+                  }
                   className="inline-flex h-10 items-center justify-center rounded-full bg-brand-600 px-6 text-sm font-semibold !text-white transition hover:bg-brand-700"
                 >
                   Sign In
@@ -613,14 +654,16 @@ const Header = () => {
                       false
                     )
                   }
-                  className="rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-semibold !text-white"
+                  className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-center text-sm font-semibold text-brand-700 transition hover:bg-brand-100"
                 >
                   Create Account
                 </Link>
               </div>
             )}
 
-            {/* Logout */}
+            {/* =================================================
+                LOGOUT
+            ================================================= */}
 
             {isAuthenticated && (
               <button
