@@ -1,9 +1,10 @@
 import {
   Package,
-  ShoppingBag,
 } from "lucide-react";
 
-import { Link } from "react-router-dom";
+import {
+  Link,
+} from "react-router-dom";
 
 import type {
   Product,
@@ -28,68 +29,83 @@ const ProductCard = ({
   const image =
     product.images?.[0];
 
+  const outOfStock =
+    product.stock <= 0;
+
+  const lowStock =
+    product.stock > 0 &&
+    product.stock <= 5;
+
   return (
     <article className="group">
       <Link
         to={`/products/${product._id}`}
         className="block"
       >
-        {/* Image */}
-        <div className="relative aspect-[1/1] overflow-hidden rounded-[18px] bg-[#f0f0f0]">
+        {/* Product image */}
+
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-primary-50">
           {image ? (
             <img
               src={image}
-              alt={product.name}
+              alt={
+                product.name
+              }
               loading="lazy"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-black/25">
-              <Package size={42} />
+            <div className="flex h-full w-full items-center justify-center text-primary-300">
+              <Package
+                size={40}
+              />
             </div>
           )}
 
-          {product.stock <= 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[2px]">
-              <span className="rounded-full bg-black px-4 py-2 text-xs font-medium text-white">
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/75">
+              <span className="rounded-full bg-primary-900 px-4 py-2 text-xs font-semibold text-white">
                 Out of stock
               </span>
             </div>
           )}
 
-          {product.stock > 0 &&
-            product.stock <= 5 && (
-              <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium shadow-sm">
-                Only {product.stock} left
-              </span>
-            )}
+          {lowStock && (
+            <span className="absolute left-3 top-3 rounded-full bg-warning-soft px-3 py-1.5 text-[10px] font-bold text-warning shadow-sm">
+              Only{" "}
+              {
+                product.stock
+              }{" "}
+              left
+            </span>
+          )}
         </div>
 
-        {/* Details */}
-        <div className="pt-4">
+        {/* Product information */}
+
+        <div className="pt-3">
           {merchant && (
-            <p className="mb-1 text-xs font-medium uppercase tracking-[0.08em] text-black/40">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700">
               {merchant}
             </p>
           )}
 
-          <h3 className="line-clamp-2 text-base font-semibold leading-6 text-black sm:text-lg">
-            {product.name}
+          <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-primary-900 sm:text-base">
+            {
+              product.name
+            }
           </h3>
 
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="text-lg font-bold tracking-tight sm:text-xl">
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-base font-black tracking-tight text-primary-900 sm:text-lg">
               NPR{" "}
               {product.price.toLocaleString(
                 "en-NP"
               )}
             </p>
 
-            {product.stock > 0 && (
-              <span className="flex items-center gap-1 text-xs text-black/45">
-                <ShoppingBag
-                  size={14}
-                />
+            {!outOfStock && (
+              <span className="text-[10px] font-semibold text-primary-400">
                 In stock
               </span>
             )}

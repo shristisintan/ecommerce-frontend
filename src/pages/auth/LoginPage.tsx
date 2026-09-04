@@ -2,6 +2,9 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
 } from "lucide-react";
 
 import {
@@ -50,14 +53,20 @@ const LoginPage = () => {
     setLoading,
   ] = useState(false);
 
+  /* ======================================================
+     LOGIN
+  ====================================================== */
+
   const handleSubmit =
     async (
-      event: React.FormEvent<HTMLFormElement>
+      event:
+        React.FormEvent<HTMLFormElement>
     ) => {
       event.preventDefault();
 
       try {
         setLoading(true);
+
         setError("");
 
         const loggedInUser =
@@ -116,89 +125,202 @@ const LoginPage = () => {
     };
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-48px)] max-w-[1200px] overflow-hidden rounded-[28px] bg-white shadow-[0_20px_70px_rgba(0,0,0,0.08)] lg:grid-cols-2">
-        {/* Brand Panel */}
+    <main className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="mx-auto grid min-h-[calc(100vh-48px)] max-w-[1180px] overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:grid-cols-[0.92fr_1.08fr]">
+        {/* =================================================
+            BRAND SIDE
+        ================================================= */}
 
-        <section className="hidden bg-black p-12 text-white lg:flex lg:flex-col lg:justify-between">
-          <Link
-            to="/"
-            className="text-3xl font-black tracking-[-0.06em]"
-          >
-            NOVA
-          </Link>
+        <section className="relative hidden overflow-hidden bg-[#e9f3f1] p-10 lg:flex lg:flex-col lg:justify-between xl:p-12">
+          {/* Decoration */}
 
-          <div className="max-w-md">
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
-              Your marketplace
-            </p>
+          <div className="absolute -right-28 -top-28 h-72 w-72 rounded-full bg-brand-600/10" />
 
-            <h1 className="text-5xl font-black leading-[0.95] tracking-[-0.045em]">
-              Everything you need,
-              from stores you trust.
-            </h1>
+          <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-white/35" />
 
-            <p className="mt-6 leading-7 text-white/55">
-              Discover products from
-              multiple merchants with
-              secure payments and
-              real-time stock
-              availability.
+          {/* Logo */}
+
+          <div className="relative z-10">
+            <Link
+              to="/"
+              className="inline-flex items-center text-3xl font-black tracking-[-0.07em] text-primary-900"
+            >
+              NOVA
+              <span className="text-brand-600">
+                .
+              </span>
+            </Link>
+
+            <p className="mt-2 text-xs font-semibold text-primary-500">
+              Multi-store Marketplace
             </p>
           </div>
 
-          <p className="text-xs text-white/35">
-            Secure shopping with NOVA.
-          </p>
+          {/* Main Content */}
+
+          <div className="relative z-10 max-w-[440px]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+              One Marketplace
+            </p>
+
+            <h1 className="mt-4 text-[46px] font-black leading-[0.98] tracking-[-0.055em] text-primary-900 xl:text-[52px]">
+              Shop, sell and manage
+              with NOVA.
+            </h1>
+
+            <p className="mt-5 max-w-[390px] text-sm leading-7 text-primary-600">
+              A secure multi-store
+              marketplace connecting
+              buyers and merchants
+              through one simple
+              platform.
+            </p>
+
+            {/* Role Information */}
+
+            <div className="mt-8 space-y-3">
+              <div className="flex items-center gap-3 rounded-xl bg-white/60 px-4 py-3 backdrop-blur-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                  <ShoppingBag
+                    size={17}
+                  />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-primary-900">
+                    Buyers
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-primary-500">
+                    Shop products and
+                    manage orders.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl bg-white/60 px-4 py-3 backdrop-blur-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                  <Store
+                    size={17}
+                  />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-primary-900">
+                    Merchants
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-primary-500">
+                    Manage products,
+                    stock and orders.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl bg-white/60 px-4 py-3 backdrop-blur-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                  <ShieldCheck
+                    size={17}
+                  />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-primary-900">
+                    Administrators
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-primary-500">
+                    Control marketplace
+                    configuration.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom */}
+
+          <div className="relative z-10 flex items-center gap-2 text-xs font-medium text-primary-500">
+            <ShieldCheck
+              size={14}
+              className="text-brand-700"
+            />
+
+            Secure access to your NOVA
+            account
+          </div>
         </section>
 
-        {/* Login Form */}
+        {/* =================================================
+            LOGIN SIDE
+        ================================================= */}
 
-        <section className="flex items-center justify-center px-6 py-12 sm:px-12">
-          <div className="w-full max-w-[420px]">
-            <Link
-              to="/"
-              className="mb-10 inline-flex items-center gap-2 text-sm text-black/50 transition hover:text-black lg:hidden"
-            >
-              <ArrowLeft
-                size={16}
-              />
+        <section className="flex items-center justify-center px-6 py-10 sm:px-10 lg:px-14 xl:px-16">
+          <div className="w-full max-w-[430px]">
+            {/* Mobile Navigation */}
 
-              Back to store
-            </Link>
-
-            <div className="lg:hidden">
+            <div className="mb-10 flex items-center justify-between lg:hidden">
               <Link
                 to="/"
-                className="text-3xl font-black tracking-[-0.06em]"
+                className="text-3xl font-black tracking-[-0.07em] text-primary-900"
               >
                 NOVA
+                <span className="text-brand-600">
+                  .
+                </span>
+              </Link>
+
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-primary-500 transition hover:text-brand-700"
+              >
+                <ArrowLeft
+                  size={15}
+                />
+
+                Store
               </Link>
             </div>
 
-            <h1 className="mt-8 text-4xl font-black tracking-[-0.04em] lg:mt-0">
-              Welcome back
-            </h1>
+            {/* Heading */}
 
-            <p className="mt-3 text-sm leading-6 text-black/50">
-              Sign in to continue shopping
-              or manage your account.
-            </p>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+                Account Access
+              </p>
+
+              <h1 className="mt-3 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
+                Welcome back
+              </h1>
+
+              <p className="mt-3 text-sm leading-6 text-primary-500">
+                Sign in with your NOVA
+                account to continue.
+              </p>
+            </div>
+
+            {/* =================================================
+                FORM
+            ================================================= */}
 
             <form
               onSubmit={
                 handleSubmit
               }
-              className="mt-9"
+              className="mt-8"
             >
               {/* Email */}
 
               <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Email
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-semibold text-primary-800"
+                >
+                  Email Address
                 </label>
 
                 <input
+                  id="email"
                   type="email"
                   required
                   autoComplete="email"
@@ -207,25 +329,34 @@ const LoginPage = () => {
                   }
                   onChange={(
                     event
-                  ) =>
+                  ) => {
                     setEmail(
-                      event.target.value
-                    )
-                  }
+                      event.target
+                        .value
+                    );
+
+                    if (error) {
+                      setError("");
+                    }
+                  }}
                   placeholder="you@example.com"
-                  className="h-13 w-full rounded-2xl border border-black/10 px-4 outline-none transition focus:border-black/40"
+                  className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
                 />
               </div>
 
               {/* Password */}
 
               <div className="mt-5">
-                <label className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-semibold text-primary-800"
+                >
                   Password
                 </label>
 
                 <div className="relative">
                   <input
+                    id="password"
                     type={
                       showPassword
                         ? "text"
@@ -238,13 +369,18 @@ const LoginPage = () => {
                     }
                     onChange={(
                       event
-                    ) =>
+                    ) => {
                       setPassword(
-                        event.target.value
-                      )
-                    }
+                        event.target
+                          .value
+                      );
+
+                      if (error) {
+                        setError("");
+                      }
+                    }}
                     placeholder="Enter your password"
-                    className="h-13 w-full rounded-2xl border border-black/10 px-4 pr-12 outline-none transition focus:border-black/40"
+                    className="h-12 w-full rounded-xl border border-border bg-white px-4 pr-12 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
                   />
 
                   <button
@@ -262,15 +398,15 @@ const LoginPage = () => {
                           !current
                       )
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40"
+                    className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center text-primary-400 transition hover:text-brand-700"
                   >
                     {showPassword ? (
                       <EyeOff
-                        size={19}
+                        size={18}
                       />
                     ) : (
                       <Eye
-                        size={19}
+                        size={18}
                       />
                     )}
                   </button>
@@ -280,7 +416,7 @@ const LoginPage = () => {
               {/* Error */}
 
               {error && (
-                <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div className="mt-5 rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
                   {error}
                 </div>
               )}
@@ -292,7 +428,7 @@ const LoginPage = () => {
                 disabled={
                   loading
                 }
-                className="mt-7 h-13 w-full rounded-full bg-black text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-7 flex h-12 w-full items-center justify-center rounded-full bg-brand-600 px-6 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading
                   ? "Signing in..."
@@ -300,15 +436,35 @@ const LoginPage = () => {
               </button>
             </form>
 
-            <p className="mt-7 text-center text-sm text-black/50">
-              Don't have an account?{" "}
+            {/* Register */}
+
+            <div className="mt-7 border-t border-border pt-6 text-center">
+              <p className="text-sm text-primary-500">
+                Don't have a buyer or
+                merchant account?{" "}
+                <Link
+                  to="/register"
+                  className="font-bold text-brand-700 transition hover:text-brand-800"
+                >
+                  Create account
+                </Link>
+              </p>
+            </div>
+
+            {/* Back desktop */}
+
+            <div className="mt-8 hidden justify-center lg:flex">
               <Link
-                to="/register"
-                className="font-semibold text-black"
+                to="/"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-primary-400 transition hover:text-brand-700"
               >
-                Create account
+                <ArrowLeft
+                  size={14}
+                />
+
+                Back to NOVA marketplace
               </Link>
-            </p>
+            </div>
           </div>
         </section>
       </div>

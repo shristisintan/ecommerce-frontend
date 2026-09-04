@@ -1,21 +1,31 @@
 import Header from "../../components/layout/Header";
+
 import HeroSection from "../../components/layout/HeroSection";
-import BrandStrip from "../../components/layout/BrandStrip";
+
+import ShopByCategory from "../../components/layout/ShopByCategory";
+
 import ProductSection from "../../components/product/ProductSection";
 
+import BrandStrip from "../../components/layout/BrandStrip";
+
+import Footer from "../../components/layout/Footer";
 
 const HomePage = () => {
   return (
     <>
       <Header />
 
-      <main>
+      <main className="bg-white">
         <HeroSection />
 
-        <BrandStrip />
+        <ShopByCategory />
 
         <ProductSection />
+
+        <BrandStrip />
       </main>
+
+      <Footer />
     </>
   );
 };

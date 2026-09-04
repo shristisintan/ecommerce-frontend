@@ -6,6 +6,7 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  SearchX,
   SlidersHorizontal,
 } from "lucide-react";
 
@@ -14,8 +15,13 @@ import {
 } from "react-router-dom";
 
 import Header from "../../components/layout/Header";
+
+import Footer from "../../components/layout/Footer";
+
 import Container from "../../components/common/Container";
+
 import ProductCard from "../../components/product/ProductCard";
+
 import ProductFilters from "../../components/product/ProductFilters";
 
 import {
@@ -42,40 +48,60 @@ const ProductsPage = () => {
     setSearchParams,
   ] = useSearchParams();
 
-  const [products, setProducts] =
+  const [
+    products,
+    setProducts,
+  ] =
     useState<Product[]>([]);
 
-  const [categories, setCategories] =
+  const [
+    categories,
+    setCategories,
+  ] =
     useState<Category[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [error, setError] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-  const [totalPages, setTotalPages] =
-    useState(1);
+  const [
+    totalPages,
+    setTotalPages,
+  ] = useState(1);
 
-  const [totalProducts, setTotalProducts] =
-    useState(0);
+  const [
+    totalProducts,
+    setTotalProducts,
+  ] = useState(0);
 
-  const [mobileFiltersOpen, setMobileFiltersOpen] =
-    useState(false);
+  const [
+    mobileFiltersOpen,
+    setMobileFiltersOpen,
+  ] = useState(false);
 
-  const [minPriceInput, setMinPriceInput] =
-    useState(
-      searchParams.get(
-        "minPrice"
-      ) ?? ""
-    );
+  const [
+    minPriceInput,
+    setMinPriceInput,
+  ] = useState(
+    searchParams.get(
+      "minPrice"
+    ) ?? ""
+  );
 
-  const [maxPriceInput, setMaxPriceInput] =
-    useState(
-      searchParams.get(
-        "maxPrice"
-      ) ?? ""
-    );
+  const [
+    maxPriceInput,
+    setMaxPriceInput,
+  ] = useState(
+    searchParams.get(
+      "maxPrice"
+    ) ?? ""
+  );
 
   const page = Math.max(
     1,
@@ -140,10 +166,10 @@ const ProductsPage = () => {
     setSearchParams(next);
   };
 
-  /*
-   * Categories only need to
-   * load once.
-   */
+  /* ======================================================
+     LOAD CATEGORIES
+  ====================================================== */
+
   useEffect(() => {
     const loadCategories =
       async () => {
@@ -154,10 +180,12 @@ const ProductsPage = () => {
           setCategories(
             result.data
           );
-        } catch (error) {
+        } catch (
+          categoryError
+        ) {
           console.error(
             "Category loading error:",
-            error
+            categoryError
           );
         }
       };
@@ -165,15 +193,16 @@ const ProductsPage = () => {
     void loadCategories();
   }, []);
 
-  /*
-   * Reload products whenever
-   * URL filters change.
-   */
+  /* ======================================================
+     LOAD PRODUCTS
+  ====================================================== */
+
   useEffect(() => {
     const loadProducts =
       async () => {
         try {
           setLoading(true);
+
           setError("");
 
           const result =
@@ -222,10 +251,13 @@ const ProductsPage = () => {
             result.pagination
               .total
           );
-        } catch (error) {
+        } catch (
+          productError
+        ) {
           setError(
-            error instanceof Error
-              ? error.message
+            productError instanceof
+              Error
+              ? productError.message
               : "Unable to load products"
           );
         } finally {
@@ -260,8 +292,10 @@ const ProductsPage = () => {
     updateParams({
       minPrice:
         minPriceInput,
+
       maxPrice:
         maxPriceInput,
+
       page: "1",
     });
 
@@ -272,6 +306,7 @@ const ProductsPage = () => {
 
   const clearFilters = () => {
     setMinPriceInput("");
+
     setMaxPriceInput("");
 
     const next =
@@ -291,69 +326,118 @@ const ProductsPage = () => {
     );
   };
 
+  const selectedCategory =
+    categories.find(
+      (category) =>
+        category._id ===
+        categoryId
+    );
+
   return (
     <>
       <Header />
 
-      <main className="bg-white">
-        <Container className="py-10 lg:py-14">
-          {/* Page header */}
-          <div className="mb-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
-              Marketplace
+      <main className="min-h-screen bg-white">
+        {/* Page intro */}
+
+        <section className="border-b border-border bg-primary-50/60">
+          <Container className="py-10 sm:py-12">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+              NOVA Marketplace
             </p>
 
-            <h1 className="mt-2 text-4xl font-black uppercase tracking-[-0.04em] sm:text-5xl">
-              Shop
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
+              Shop Products
             </h1>
-          </div>
 
-          <div className="grid gap-8 lg:grid-cols-[260px_1fr] xl:grid-cols-[280px_1fr]">
+            <p className="mt-3 max-w-[560px] text-sm leading-6 text-primary-500">
+              Browse products from
+              stores across the
+              marketplace.
+            </p>
+          </Container>
+        </section>
+
+        <Container className="py-8 sm:py-10">
+          {/* Active search/category */}
+
+          {(search ||
+            selectedCategory) && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-primary-400">
+                Showing:
+              </span>
+
+              {search && (
+                <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
+                  Search:{" "}
+                  {search}
+                </span>
+              )}
+
+              {selectedCategory && (
+                <span className="rounded-full bg-primary-100 px-3 py-1.5 text-xs font-semibold text-primary-700">
+                  {
+                    selectedCategory.name
+                  }
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="grid gap-8 lg:grid-cols-[245px_1fr] xl:grid-cols-[260px_1fr]">
             {/* Desktop filters */}
+
             <div className="hidden lg:block">
-              <ProductFilters
-                categories={
-                  categories
-                }
-                selectedCategory={
-                  categoryId
-                }
-                minPrice={
-                  minPriceInput
-                }
-                maxPrice={
-                  maxPriceInput
-                }
-                onCategoryChange={
-                  handleCategoryChange
-                }
-                onMinPriceChange={
-                  setMinPriceInput
-                }
-                onMaxPriceChange={
-                  setMaxPriceInput
-                }
-                onApplyPrice={
-                  applyPrice
-                }
-                onClear={
-                  clearFilters
-                }
-              />
+              <div className="sticky top-[110px]">
+                <ProductFilters
+                  categories={
+                    categories
+                  }
+                  selectedCategory={
+                    categoryId
+                  }
+                  minPrice={
+                    minPriceInput
+                  }
+                  maxPrice={
+                    maxPriceInput
+                  }
+                  onCategoryChange={
+                    handleCategoryChange
+                  }
+                  onMinPriceChange={
+                    setMinPriceInput
+                  }
+                  onMaxPriceChange={
+                    setMaxPriceInput
+                  }
+                  onApplyPrice={
+                    applyPrice
+                  }
+                  onClear={
+                    clearFilters
+                  }
+                />
+              </div>
             </div>
 
-            {/* Products */}
+            {/* Product content */}
+
             <div>
               {/* Toolbar */}
-              <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
+
+              <div className="mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
                 <div>
-                  <h2 className="text-xl font-bold sm:text-2xl">
+                  <h2 className="text-lg font-bold text-primary-900 sm:text-xl">
                     {search
                       ? `Results for "${search}"`
-                      : "All Products"}
+                      : selectedCategory
+                        ? selectedCategory.name
+                        : "All Products"}
                   </h2>
 
-                  <p className="mt-1 text-sm text-black/45">
+                  <p className="mt-1 text-xs text-primary-400 sm:text-sm">
                     {totalProducts}{" "}
                     {totalProducts ===
                     1
@@ -362,8 +446,9 @@ const ProductsPage = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {/* Mobile filters */}
+
                   <button
                     type="button"
                     onClick={() =>
@@ -371,13 +456,16 @@ const ProductsPage = () => {
                         true
                       )
                     }
-                    className="flex h-11 items-center gap-2 rounded-full bg-[#f0f0f0] px-4 text-sm font-medium lg:hidden"
+                    className="flex h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 lg:hidden"
                   >
                     <SlidersHorizontal
-                      size={17}
+                      size={16}
                     />
+
                     Filters
                   </button>
+
+                  {/* Sort */}
 
                   <select
                     value={sort}
@@ -389,42 +477,52 @@ const ProductsPage = () => {
                           event
                             .target
                             .value,
+
                         page: "1",
                       })
                     }
-                    className="h-11 rounded-full border border-black/10 bg-white px-4 text-sm outline-none"
+                    className="h-10 rounded-full border border-border bg-white px-4 text-sm font-medium text-primary-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
                   >
                     <option value="">
                       Newest
                     </option>
 
                     <option value="price_asc">
-                      Price: Low to High
+                      Price: Low to
+                      High
                     </option>
 
                     <option value="price_desc">
-                      Price: High to Low
+                      Price: High to
+                      Low
                     </option>
                   </select>
                 </div>
               </div>
 
               {/* Loading */}
+
               {loading && (
-                <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:gap-x-5">
                   {Array.from({
                     length: 6,
                   }).map(
-                    (_, index) => (
+                    (
+                      _,
+                      index
+                    ) => (
                       <div
-                        key={index}
-                        className="animate-pulse"
+                        key={
+                          index
+                        }
                       >
-                        <div className="aspect-square rounded-[18px] bg-black/5" />
+                        <div className="aspect-square animate-pulse rounded-xl bg-primary-100" />
 
-                        <div className="mt-4 h-5 w-3/4 rounded bg-black/10" />
+                        <div className="mt-3 h-3 w-20 animate-pulse rounded bg-primary-100" />
 
-                        <div className="mt-3 h-5 w-1/3 rounded bg-black/10" />
+                        <div className="mt-2 h-4 w-3/4 animate-pulse rounded bg-primary-100" />
+
+                        <div className="mt-2 h-5 w-1/3 animate-pulse rounded bg-primary-100" />
                       </div>
                     )
                   )}
@@ -432,35 +530,44 @@ const ProductsPage = () => {
               )}
 
               {/* Error */}
+
               {!loading &&
                 error && (
-                  <div className="rounded-2xl border border-black/10 p-10 text-center">
-                    <h3 className="font-semibold">
+                  <div className="rounded-xl border border-danger/15 bg-danger-soft px-6 py-12 text-center">
+                    <h3 className="font-semibold text-danger">
                       Products could
                       not be loaded
                     </h3>
 
-                    <p className="mt-2 text-sm text-black/50">
+                    <p className="mt-2 text-sm text-text-secondary">
                       {error}
                     </p>
                   </div>
                 )}
 
               {/* Empty */}
+
               {!loading &&
                 !error &&
                 products.length ===
                   0 && (
-                  <div className="rounded-[20px] bg-[#f7f7f7] px-6 py-20 text-center">
-                    <h3 className="text-xl font-semibold">
+                  <div className="flex min-h-[350px] flex-col items-center justify-center rounded-xl bg-primary-50 px-6 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-primary-400 shadow-sm">
+                      <SearchX
+                        size={24}
+                      />
+                    </div>
+
+                    <h3 className="mt-5 text-lg font-bold text-primary-900">
                       No products
                       found
                     </h3>
 
-                    <p className="mt-2 text-sm text-black/50">
-                      Try changing
-                      your search or
-                      filters.
+                    <p className="mt-2 max-w-[340px] text-sm leading-6 text-primary-500">
+                      Try another
+                      search,
+                      category or
+                      price range.
                     </p>
 
                     <button
@@ -468,20 +575,21 @@ const ProductsPage = () => {
                       onClick={
                         clearFilters
                       }
-                      className="mt-6 rounded-full bg-black px-6 py-3 text-sm font-medium text-white"
+                      className="mt-6 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
                     >
-                      Clear filters
+                      Clear Filters
                     </button>
                   </div>
                 )}
 
-              {/* Grid */}
+              {/* Products */}
+
               {!loading &&
                 !error &&
                 products.length >
                   0 && (
                   <>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-9 xl:grid-cols-3 xl:gap-x-5">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:gap-x-5">
                       {products.map(
                         (
                           product
@@ -499,7 +607,8 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Pagination */}
-                    <div className="mt-12 flex items-center justify-between border-t border-black/10 pt-6">
+
+                    <div className="mt-12 flex items-center justify-between border-t border-border pt-6">
                       <button
                         type="button"
                         disabled={
@@ -514,21 +623,24 @@ const ProductsPage = () => {
                               ),
                           })
                         }
-                        className="flex h-10 items-center gap-2 rounded-lg border border-black/10 px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                        className="flex h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-30"
                       >
                         <ChevronLeft
                           size={16}
                         />
-                        Previous
+
+                        <span className="hidden sm:inline">
+                          Previous
+                        </span>
                       </button>
 
-                      <p className="text-sm text-black/55">
+                      <p className="text-xs font-medium text-primary-400 sm:text-sm">
                         Page{" "}
-                        <span className="font-semibold text-black">
+                        <span className="font-bold text-primary-900">
                           {page}
                         </span>{" "}
                         of{" "}
-                        <span className="font-semibold text-black">
+                        <span className="font-bold text-primary-900">
                           {Math.max(
                             totalPages,
                             1
@@ -551,9 +663,12 @@ const ProductsPage = () => {
                               ),
                           })
                         }
-                        className="flex h-10 items-center gap-2 rounded-lg border border-black/10 px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                        className="flex h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-30"
                       >
-                        Next
+                        <span className="hidden sm:inline">
+                          Next
+                        </span>
+
                         <ChevronRight
                           size={16}
                         />
@@ -566,13 +681,16 @@ const ProductsPage = () => {
         </Container>
       </main>
 
+      <Footer />
+
       {/* Mobile filter drawer */}
+
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
             aria-label="Close filter overlay"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-primary-900/50"
             onClick={() =>
               setMobileFiltersOpen(
                 false
@@ -580,7 +698,7 @@ const ProductsPage = () => {
             }
           />
 
-          <div className="absolute right-0 top-0 h-full w-[88%] max-w-[360px] overflow-y-auto bg-white">
+          <div className="absolute right-0 top-0 h-full w-[88%] max-w-[360px] overflow-y-auto bg-white shadow-2xl">
             <ProductFilters
               mobile
               categories={

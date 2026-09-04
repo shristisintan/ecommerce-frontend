@@ -1,10 +1,9 @@
 import {
-  ChevronDown,
   LogOut,
   Menu,
   PackageCheck,
   Search,
-  ShoppingCart,
+  ShoppingBag,
   UserRound,
   X,
 } from "lucide-react";
@@ -63,10 +62,10 @@ const Header = () => {
     setSearchValue,
   ] = useState("");
 
-  /*
-   * Keep search input synced
-   * with ?search= in URL.
-   */
+  /* ======================================================
+     SEARCH SYNC
+  ====================================================== */
+
   useEffect(() => {
     const params =
       new URLSearchParams(
@@ -78,6 +77,52 @@ const Header = () => {
         ""
     );
   }, [location.search]);
+
+  /* ======================================================
+     SCROLL TO HASH SECTION
+  ====================================================== */
+
+  useEffect(() => {
+    if (!location.hash) {
+      return;
+    }
+
+    const sectionId =
+      location.hash.replace(
+        "#",
+        ""
+      );
+
+    const timer =
+      window.setTimeout(
+        () => {
+          const section =
+            document.getElementById(
+              sectionId
+            );
+
+          section?.scrollIntoView({
+            behavior:
+              "smooth",
+            block: "start",
+          });
+        },
+        100
+      );
+
+    return () => {
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [
+    location.pathname,
+    location.hash,
+  ]);
+
+  /* ======================================================
+     SEARCH
+  ====================================================== */
 
   const handleSearch = (
     event:
@@ -92,23 +137,13 @@ const Header = () => {
       navigate(
         "/products"
       );
-
-      setMobileSearchOpen(
-        false
+    } else {
+      navigate(
+        `/products?search=${encodeURIComponent(
+          value
+        )}&page=1`
       );
-
-      setMobileOpen(
-        false
-      );
-
-      return;
     }
-
-    navigate(
-      `/products?search=${encodeURIComponent(
-        value
-      )}&page=1`
-    );
 
     setMobileSearchOpen(
       false
@@ -118,6 +153,10 @@ const Header = () => {
       false
     );
   };
+
+  /* ======================================================
+     LOGOUT
+  ====================================================== */
 
   const handleLogout =
     async () => {
@@ -135,45 +174,28 @@ const Header = () => {
 
   return (
     <>
-      {/* Promotion Bar */}
+      {/* Top bar */}
 
-      <div className="bg-black text-white">
-        <Container className="relative flex min-h-9 items-center justify-center py-2">
-          <p className="text-center text-xs sm:text-sm">
-            Sign up and get 20%
-            off your first
-            order.{" "}
-
-            <Link
-              to="/register"
-              className="font-medium underline underline-offset-2"
-            >
-              Sign Up Now
-            </Link>
+      <div className="bg-brand-700">
+        <Container className="flex min-h-8 items-center justify-center">
+          <p className="py-1.5 text-center text-[11px] font-medium tracking-wide text-white/90 sm:text-xs">
+            Multiple stores.
+            Secure checkout.
+            Verified payments.
           </p>
-
-          <button
-            type="button"
-            aria-label="Close promotion"
-            className="absolute right-4 hidden text-white/70 transition hover:text-white sm:block"
-          >
-            <X
-              size={16}
-            />
-          </button>
         </Container>
       </div>
 
-      {/* Main Header */}
+      {/* Main header */}
 
-      <header className="border-b border-black/5 bg-white">
-        <Container className="flex h-[76px] items-center gap-4 lg:gap-7">
-          {/* Mobile Menu */}
+      <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur-md">
+        <Container className="flex h-[72px] items-center gap-5">
+          {/* Mobile menu */}
 
           <button
             type="button"
-            aria-label="Open navigation"
-            className="shrink-0 lg:hidden"
+            aria-label="Open menu"
+            className="rounded-lg p-1 text-primary-900 lg:hidden"
             onClick={() =>
               setMobileOpen(
                 true
@@ -181,7 +203,7 @@ const Header = () => {
             }
           >
             <Menu
-              size={24}
+              size={23}
             />
           </button>
 
@@ -189,48 +211,40 @@ const Header = () => {
 
           <Link
             to="/"
-            className="shrink-0 text-2xl font-black tracking-[-0.06em] sm:text-3xl"
+            className="shrink-0 text-[27px] font-black tracking-[-0.07em] text-primary-900"
           >
             NOVA
+            <span className="text-brand-600">
+              .
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop navigation */}
 
-          <nav className="hidden shrink-0 items-center gap-5 text-sm lg:flex xl:gap-6">
+          <nav className="hidden items-center gap-6 text-sm font-semibold text-primary-700 lg:flex">
             <Link
               to="/products"
-              className="flex items-center gap-1 transition-opacity hover:opacity-60"
+              className="transition hover:text-brand-700"
             >
               Shop
-
-              <ChevronDown
-                size={15}
-              />
             </Link>
 
             <Link
-              to="/products?sort=price_asc"
-              className="transition-opacity hover:opacity-60"
-            >
-              Best Value
-            </Link>
-
-            <Link
-              to="/products"
-              className="transition-opacity hover:opacity-60"
+              to="/#new-arrivals"
+              className="transition hover:text-brand-700"
             >
               New Arrivals
             </Link>
 
             <Link
-              to="/products"
-              className="transition-opacity hover:opacity-60"
+              to="/products?sort=price_asc"
+              className="transition hover:text-brand-700"
             >
-              Products
+              Best Value
             </Link>
           </nav>
 
-          {/* Desktop Search */}
+          {/* Search */}
 
           <form
             onSubmit={
@@ -238,10 +252,10 @@ const Header = () => {
             }
             className="hidden flex-1 md:block"
           >
-            <div className="flex h-12 items-center gap-3 rounded-full bg-[#f0f0f0] px-4 transition focus-within:ring-1 focus-within:ring-black/20">
+            <div className="mx-auto flex h-11 max-w-[680px] items-center gap-3 rounded-full border border-border bg-primary-50 px-4 transition focus-within:border-brand-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-50">
               <Search
-                size={20}
-                className="shrink-0 text-black/40"
+                size={18}
+                className="text-text-muted"
               />
 
               <input
@@ -257,21 +271,20 @@ const Header = () => {
                       .value
                   )
                 }
-                placeholder="Search for products..."
-                className="w-full bg-transparent text-sm outline-none placeholder:text-black/40"
+                placeholder="Search products..."
+                className="w-full bg-transparent text-sm text-primary-900 outline-none placeholder:text-text-muted"
               />
             </div>
           </form>
 
-          {/* Header Actions */}
+          {/* Actions */}
 
-          <div className="ml-auto flex shrink-0 items-center gap-4">
-            {/* Mobile Search */}
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+            {/* Mobile search */}
 
             <button
               type="button"
               aria-label="Search"
-              className="md:hidden"
               onClick={() =>
                 setMobileSearchOpen(
                   (
@@ -280,9 +293,10 @@ const Header = () => {
                     !current
                 )
               }
+              className="rounded-full p-2.5 text-primary-700 transition hover:bg-primary-50 md:hidden"
             >
               <Search
-                size={22}
+                size={20}
               />
             </button>
 
@@ -291,31 +305,32 @@ const Header = () => {
             {isBuyer && (
               <Link
                 to="/orders"
-                aria-label="My Orders"
                 title="My Orders"
-                className="transition-opacity hover:opacity-60"
+                aria-label="My Orders"
+                className="rounded-full p-2.5 text-primary-700 transition hover:bg-brand-50 hover:text-brand-700"
               >
                 <PackageCheck
-                  size={22}
+                  size={20}
                 />
               </Link>
             )}
 
-            {/* Buyer Cart */}
+            {/* Cart */}
 
             {isBuyer && (
               <Link
                 to="/cart"
-                aria-label={`Cart with ${itemCount} items`}
-                className="relative transition-opacity hover:opacity-60"
+                title="Cart"
+                aria-label="Cart"
+                className="relative rounded-full p-2.5 text-primary-700 transition hover:bg-brand-50 hover:text-brand-700"
               >
-                <ShoppingCart
-                  size={22}
+                <ShoppingBag
+                  size={20}
                 />
 
                 {itemCount >
                   0 && (
-                  <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold leading-none text-white">
+                  <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white">
                     {itemCount >
                     99
                       ? "99+"
@@ -325,43 +340,32 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Logged In User */}
+            {/* User */}
 
             {authLoading ? (
-              <div className="h-9 w-9 animate-pulse rounded-full bg-[#f0f0f0]" />
+              <div className="h-9 w-9 animate-pulse rounded-full bg-primary-100" />
             ) : isAuthenticated &&
               user ? (
-              <div className="flex items-center gap-3">
-                {/* User name */}
-
+              <div className="ml-1 flex items-center gap-2">
                 <div className="hidden text-right xl:block">
-                  <p className="max-w-[130px] truncate text-xs font-semibold">
+                  <p className="max-w-[120px] truncate text-xs font-semibold text-primary-900">
                     {
                       user.name
                     }
                   </p>
 
-                  <p className="mt-0.5 text-[10px] uppercase tracking-[0.08em] text-black/40">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-brand-700">
                     {
                       user.role
                     }
                   </p>
                 </div>
 
-                {/* Avatar */}
-
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f0f0f0]"
-                  title={
-                    user.name
-                  }
-                >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-700">
                   <UserRound
                     size={18}
                   />
                 </div>
-
-                {/* Logout */}
 
                 <button
                   type="button"
@@ -370,28 +374,25 @@ const Header = () => {
                   onClick={() =>
                     void handleLogout()
                   }
-                  className="text-black/45 transition hover:text-black"
+                  className="hidden rounded-full p-2 text-text-muted transition hover:bg-danger-soft hover:text-danger sm:block"
                 >
                   <LogOut
-                    size={18}
+                    size={17}
                   />
                 </button>
               </div>
             ) : (
               <Link
                 to="/login"
-                aria-label="Account"
-                className="transition-opacity hover:opacity-60"
+                className="ml-1 rounded-full bg-primary-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
-                <UserRound
-                  size={22}
-                />
+                Sign In
               </Link>
             )}
           </div>
         </Container>
 
-        {/* Mobile Search Bar */}
+        {/* Mobile search */}
 
         {mobileSearchOpen && (
           <Container className="pb-4 md:hidden">
@@ -399,11 +400,11 @@ const Header = () => {
               onSubmit={
                 handleSearch
               }
-              className="flex h-11 items-center gap-3 rounded-full bg-[#f0f0f0] px-4"
+              className="flex h-11 items-center gap-3 rounded-full border border-border bg-primary-50 px-4"
             >
               <Search
-                size={18}
-                className="shrink-0 text-black/40"
+                size={17}
+                className="text-text-muted"
               />
 
               <input
@@ -420,15 +421,15 @@ const Header = () => {
                       .value
                   )
                 }
-                placeholder="Search for products..."
-                className="w-full bg-transparent text-sm outline-none placeholder:text-black/40"
+                placeholder="Search products..."
+                className="w-full bg-transparent text-sm outline-none"
               />
             </form>
           </Container>
         )}
       </header>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile drawer */}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -436,8 +437,8 @@ const Header = () => {
 
           <button
             type="button"
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-black/40"
+            aria-label="Close menu"
+            className="absolute inset-0 bg-primary-900/45"
             onClick={() =>
               setMobileOpen(
                 false
@@ -447,9 +448,7 @@ const Header = () => {
 
           {/* Drawer */}
 
-          <div className="relative flex h-full w-[82%] max-w-[330px] flex-col bg-white p-6 shadow-xl">
-            {/* Drawer Header */}
-
+          <div className="relative flex h-full w-[84%] max-w-[330px] flex-col bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <Link
                 to="/"
@@ -458,45 +457,49 @@ const Header = () => {
                     false
                   )
                 }
-                className="text-2xl font-black tracking-[-0.06em]"
+                className="text-2xl font-black tracking-[-0.07em] text-primary-900"
               >
                 NOVA
+                <span className="text-brand-600">
+                  .
+                </span>
               </Link>
 
               <button
                 type="button"
-                aria-label="Close navigation"
+                aria-label="Close menu"
                 onClick={() =>
                   setMobileOpen(
                     false
                   )
                 }
+                className="rounded-full p-2 hover:bg-primary-50"
               >
                 <X
-                  size={22}
+                  size={20}
                 />
               </button>
             </div>
 
-            {/* Logged-in mobile account */}
+            {/* User */}
 
             {isAuthenticated &&
               user && (
-                <div className="mt-7 flex items-center gap-3 rounded-2xl bg-[#f5f5f5] p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+                <div className="mt-7 flex items-center gap-3 rounded-xl bg-primary-50 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-700">
                     <UserRound
-                      size={19}
+                      size={18}
                     />
                   </div>
 
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">
+                  <div>
+                    <p className="text-sm font-semibold text-primary-900">
                       {
                         user.name
                       }
                     </p>
 
-                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-black/40">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
                       {
                         user.role
                       }
@@ -507,7 +510,7 @@ const Header = () => {
 
             {/* Navigation */}
 
-            <nav className="mt-8 flex flex-col gap-5 text-base">
+            <nav className="mt-7 flex flex-col">
               <Link
                 to="/products"
                 onClick={() =>
@@ -515,8 +518,21 @@ const Header = () => {
                     false
                   )
                 }
+                className="border-b border-border py-4 text-sm font-semibold text-primary-800"
               >
                 Shop
+              </Link>
+
+              <Link
+                to="/#new-arrivals"
+                onClick={() =>
+                  setMobileOpen(
+                    false
+                  )
+                }
+                className="border-b border-border py-4 text-sm font-semibold text-primary-800"
+              >
+                New Arrivals
               </Link>
 
               <Link
@@ -526,130 +542,100 @@ const Header = () => {
                     false
                   )
                 }
+                className="border-b border-border py-4 text-sm font-semibold text-primary-800"
               >
                 Best Value
               </Link>
 
-              <Link
-                to="/products"
-                onClick={() =>
-                  setMobileOpen(
-                    false
-                  )
-                }
-              >
-                New Arrivals
-              </Link>
-
-              <Link
-                to="/products"
-                onClick={() =>
-                  setMobileOpen(
-                    false
-                  )
-                }
-              >
-                Products
-              </Link>
-
-              {/* Buyer My Orders */}
-
               {isBuyer && (
-                <Link
-                  to="/orders"
-                  onClick={() =>
-                    setMobileOpen(
-                      false
-                    )
-                  }
-                  className="flex items-center gap-3"
-                >
-                  <PackageCheck
-                    size={18}
-                  />
-
-                  My Orders
-                </Link>
-              )}
-
-              {/* Buyer Cart */}
-
-              {isBuyer && (
-                <Link
-                  to="/cart"
-                  onClick={() =>
-                    setMobileOpen(
-                      false
-                    )
-                  }
-                  className="flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-3">
-                    <ShoppingCart
+                <>
+                  <Link
+                    to="/orders"
+                    onClick={() =>
+                      setMobileOpen(
+                        false
+                      )
+                    }
+                    className="flex items-center gap-3 border-b border-border py-4 text-sm font-semibold text-primary-800"
+                  >
+                    <PackageCheck
                       size={18}
                     />
 
-                    Cart
-                  </span>
-
-                  {itemCount >
-                    0 && (
-                    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-black px-2 text-xs font-semibold text-white">
-                      {
-                        itemCount
-                      }
-                    </span>
-                  )}
-                </Link>
-              )}
-
-              {/* Logged Out */}
-
-              {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/login"
-                    onClick={() =>
-                      setMobileOpen(
-                        false
-                      )
-                    }
-                  >
-                    Sign In
+                    My Orders
                   </Link>
 
                   <Link
-                    to="/register"
+                    to="/cart"
                     onClick={() =>
                       setMobileOpen(
                         false
                       )
                     }
+                    className="flex items-center justify-between border-b border-border py-4 text-sm font-semibold text-primary-800"
                   >
-                    Create Account
+                    <span className="flex items-center gap-3">
+                      <ShoppingBag
+                        size={18}
+                      />
+
+                      Cart
+                    </span>
+
+                    {itemCount >
+                      0 && (
+                      <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">
+                        {
+                          itemCount
+                        }
+                      </span>
+                    )}
                   </Link>
                 </>
               )}
             </nav>
 
-            {/* Mobile Logout */}
+            {/* Logged out */}
+
+            {!isAuthenticated && (
+              <div className="mt-7 grid gap-3">
+                <Link
+                  to="/login"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-brand-600 px-6 text-sm font-semibold !text-white transition hover:bg-brand-700"
+                >
+                  Sign In
+                </Link>
+
+                <Link
+                  to="/register"
+                  onClick={() =>
+                    setMobileOpen(
+                      false
+                    )
+                  }
+                  className="rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-semibold !text-white"
+                >
+                  Create Account
+                </Link>
+              </div>
+            )}
+
+            {/* Logout */}
 
             {isAuthenticated && (
-              <div className="mt-auto border-t border-black/10 pt-5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleLogout()
-                  }
-                  className="flex w-full items-center gap-3 text-sm font-medium text-black/60 transition hover:text-black"
-                >
-                  <LogOut
-                    size={18}
-                  />
+              <button
+                type="button"
+                onClick={() =>
+                  void handleLogout()
+                }
+                className="mt-auto flex items-center gap-3 border-t border-border pt-5 text-sm font-semibold text-text-secondary"
+              >
+                <LogOut
+                  size={18}
+                />
 
-                  Sign Out
-                </button>
-              </div>
+                Sign Out
+              </button>
             )}
           </div>
         </div>

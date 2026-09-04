@@ -49,48 +49,57 @@ const AdminLayout = () => {
 
   const menuItems = [
     {
-      label:
-        "Dashboard",
-      path:
-        "/admin",
-      icon:
-        LayoutDashboard,
+      label: "Dashboard",
+      path: "/admin",
+      icon: LayoutDashboard,
       end: true,
     },
     {
-      label:
-        "Categories",
+      label: "Categories",
       path:
         "/admin/categories",
-      icon:
-        Shapes,
+      icon: Shapes,
       end: false,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
-      {/* Mobile Header */}
+    <div className="min-h-screen bg-background">
+      {/* =====================================================
+          MOBILE HEADER
+      ====================================================== */}
 
-      <header className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5 lg:hidden">
-        <div className="flex items-center gap-2">
-          <ShieldCheck
-            size={20}
-          />
+      <header className="flex h-16 items-center justify-between border-b border-border bg-white px-5 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <ShieldCheck
+              size={18}
+            />
+          </div>
 
-          <span className="text-lg font-black tracking-tight">
-            NOVA
-          </span>
+          <div>
+            <p className="text-lg font-black tracking-[-0.05em] text-primary-900">
+              NOVA
+              <span className="text-brand-600">
+                .
+              </span>
+            </p>
+
+            <p className="text-[10px] font-semibold text-primary-400">
+              Admin Portal
+            </p>
+          </div>
         </div>
 
         <button
           type="button"
+          aria-label="Open menu"
           onClick={() =>
             setSidebarOpen(
               true
             )
           }
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f5f5]"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-primary-700"
         >
           <Menu
             size={20}
@@ -98,27 +107,31 @@ const AdminLayout = () => {
         </button>
       </header>
 
-      {/* Overlay */}
+      {/* =====================================================
+          MOBILE OVERLAY
+      ====================================================== */}
 
       {sidebarOpen && (
         <button
           type="button"
-          aria-label="Close sidebar"
+          aria-label="Close menu"
           onClick={() =>
             setSidebarOpen(
               false
             )
           }
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-primary-900/35 lg:hidden"
         />
       )}
 
-      {/* Sidebar */}
+      {/* =====================================================
+          SIDEBAR
+      ====================================================== */}
 
       <aside
         className={`
-          fixed left-0 top-0 z-50 flex h-screen w-[270px]
-          flex-col border-r border-black/10 bg-white
+          fixed left-0 top-0 z-50 flex h-screen w-[250px]
+          flex-col border-r border-border bg-white
           transition-transform duration-200
           lg:translate-x-0
           ${
@@ -130,20 +143,23 @@ const AdminLayout = () => {
       >
         {/* Logo */}
 
-        <div className="flex h-20 items-center justify-between border-b border-black/10 px-6">
+        <div className="flex h-20 items-center justify-between border-b border-border px-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
               <ShieldCheck
                 size={19}
               />
             </div>
 
             <div>
-              <h1 className="text-lg font-black tracking-tight">
+              <h1 className="text-xl font-black tracking-[-0.05em] text-primary-900">
                 NOVA
+                <span className="text-brand-600">
+                  .
+                </span>
               </h1>
 
-              <p className="text-xs text-black/40">
+              <p className="text-[11px] font-medium text-primary-400">
                 Admin Portal
               </p>
             </div>
@@ -151,33 +167,36 @@ const AdminLayout = () => {
 
           <button
             type="button"
+            aria-label="Close sidebar"
             onClick={() =>
               setSidebarOpen(
                 false
               )
             }
-            className="lg:hidden"
+            className="rounded-lg p-2 text-primary-400 hover:bg-primary-50 lg:hidden"
           >
             <X
-              size={20}
+              size={19}
             />
           </button>
         </div>
 
-        {/* Admin info */}
+        {/* Admin Profile */}
 
-        <div className="mx-4 mt-5 rounded-2xl bg-[#f7f7f7] p-4">
-          <p className="text-xs uppercase tracking-[0.1em] text-black/40">
-            Signed in as
-          </p>
+        <div className="px-4 pt-5">
+          <div className="rounded-xl bg-primary-50 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-400">
+              Administrator
+            </p>
 
-          <p className="mt-1 truncate text-sm font-semibold">
-            {user?.name}
-          </p>
+            <p className="mt-2 truncate text-sm font-bold text-primary-900">
+              {user?.name}
+            </p>
 
-          <p className="mt-1 text-xs font-medium text-black/40">
-            ADMIN
-          </p>
+            <div className="mt-2 inline-flex rounded-full bg-brand-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-brand-700">
+              Admin
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -191,15 +210,9 @@ const AdminLayout = () => {
               end,
             }) => (
               <NavLink
-                key={
-                  path
-                }
-                to={
-                  path
-                }
-                end={
-                  end
-                }
+                key={path}
+                to={path}
+                end={end}
                 onClick={() =>
                   setSidebarOpen(
                     false
@@ -209,11 +222,10 @@ const AdminLayout = () => {
                   isActive,
                 }) =>
                   [
-                    "relative flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200",
-
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition",
                     isActive
-                      ? "border-black/5 bg-[#f2f2f2] text-black"
-                      : "border-transparent text-black/60 hover:bg-[#f7f7f7] hover:text-black",
+                      ? "bg-brand-50 text-brand-700"
+                      : "text-primary-500 hover:bg-primary-50 hover:text-primary-900",
                   ].join(
                     " "
                   )
@@ -223,10 +235,6 @@ const AdminLayout = () => {
                   isActive,
                 }) => (
                   <>
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-black" />
-                    )}
-
                     <Icon
                       size={18}
                       strokeWidth={
@@ -250,13 +258,13 @@ const AdminLayout = () => {
 
         {/* Logout */}
 
-        <div className="border-t border-black/10 p-4">
+        <div className="border-t border-border p-4">
           <button
             type="button"
             onClick={() =>
               void handleLogout()
             }
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-black/60 transition hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-primary-500 transition hover:bg-danger-soft hover:text-danger"
           >
             <LogOut
               size={18}
@@ -267,10 +275,12 @@ const AdminLayout = () => {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* =====================================================
+          MAIN CONTENT
+      ====================================================== */}
 
-      <main className="lg:ml-[270px]">
-        <div className="mx-auto max-w-[1500px] p-5 sm:p-7 lg:p-10">
+      <main className="lg:ml-[250px]">
+        <div className="mx-auto max-w-[1440px] p-5 sm:p-7 lg:p-9">
           <Outlet />
         </div>
       </main>

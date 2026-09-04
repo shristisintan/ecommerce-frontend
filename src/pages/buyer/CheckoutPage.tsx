@@ -2,7 +2,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CreditCard,
+  MapPin,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -17,6 +20,7 @@ import {
 } from "react-router-dom";
 
 import Header from "../../components/layout/Header";
+import Footer from "../../components/layout/Footer";
 import Container from "../../components/common/Container";
 
 import {
@@ -70,14 +74,17 @@ const steps = [
   {
     id: 1,
     label: "Delivery",
+    icon: MapPin,
   },
   {
     id: 2,
     label: "Review",
+    icon: Package,
   },
   {
     id: 3,
     label: "Payment",
+    icon: CreditCard,
   },
 ];
 
@@ -129,15 +136,6 @@ const CheckoutPage = () => {
     setPaymentError,
   ] = useState("");
 
-  /*
-   * Once an order has been
-   * created, reuse its ID if
-   * payment initiation needs
-   * to be retried.
-   *
-   * This prevents creating
-   * duplicate pending orders.
-   */
   const [
     createdOrderId,
     setCreatedOrderId,
@@ -148,13 +146,12 @@ const CheckoutPage = () => {
   const items =
     cart?.items ?? [];
 
-  /*
-   * DISPLAY TOTAL ONLY.
-   *
-   * Backend calculates the
-   * authoritative amount again
-   * from MongoDB.
-   */
+  /* ======================================================
+     DISPLAY TOTAL
+
+     Backend remains authoritative.
+  ====================================================== */
+
   const subtotal =
     useMemo(() => {
       return items.reduce(
@@ -171,8 +168,7 @@ const CheckoutPage = () => {
 
           return (
             total +
-            item.productId
-              .price *
+            item.productId.price *
               item.quantity
           );
         },
@@ -193,15 +189,19 @@ const CheckoutPage = () => {
       );
     }, [items]);
 
-  /*
-   * Automatically save
-   * checkout fields.
-   */
+  /* ======================================================
+     LOCAL STORAGE PERSISTENCE
+  ====================================================== */
+
   useEffect(() => {
     saveCheckoutData(
       formData
     );
   }, [formData]);
+
+  /* ======================================================
+     FIELD CHANGE
+  ====================================================== */
 
   const handleFieldChange = (
     field:
@@ -209,7 +209,9 @@ const CheckoutPage = () => {
     value: string
   ) => {
     setFormData(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
 
         shippingAddress: {
@@ -221,7 +223,9 @@ const CheckoutPage = () => {
     );
 
     setErrors(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
 
         [field]:
@@ -229,6 +233,10 @@ const CheckoutPage = () => {
       })
     );
   };
+
+  /* ======================================================
+     DELIVERY VALIDATION
+  ====================================================== */
 
   const handleDeliverySubmit = (
     event:
@@ -241,12 +249,16 @@ const CheckoutPage = () => {
         formData
       );
 
-    if (!result.success) {
+    if (
+      !result.success
+    ) {
       const nextErrors:
         ShippingErrors = {};
 
       result.error.issues.forEach(
-        (issue) => {
+        (
+          issue
+        ) => {
           const field =
             issue.path[1] as
               | keyof ShippingAddress
@@ -275,11 +287,6 @@ const CheckoutPage = () => {
 
     setErrors({});
 
-    /*
-     * result.data contains
-     * Zod-validated and
-     * trimmed values.
-     */
     setFormData(
       result.data
     );
@@ -292,16 +299,21 @@ const CheckoutPage = () => {
     });
   };
 
-  const goToPayment = () => {
-    setPaymentError("");
+  /* ======================================================
+     STEP NAVIGATION
+  ====================================================== */
 
-    setCurrentStep(3);
+  const goToPayment =
+    () => {
+      setPaymentError("");
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+      setCurrentStep(3);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    };
 
   const goToDelivery =
     () => {
@@ -309,8 +321,7 @@ const CheckoutPage = () => {
 
       window.scrollTo({
         top: 0,
-        behavior:
-          "smooth",
+        behavior: "smooth",
       });
     };
 
@@ -320,21 +331,20 @@ const CheckoutPage = () => {
 
       window.scrollTo({
         top: 0,
-        behavior:
-          "smooth",
+        behavior: "smooth",
       });
     };
 
-  /*
-   * REAL CHECKOUT FLOW
-   *
-   * 1. Validate address
-   * 2. Create order
-   * 3. Backend calculates price
-   * 4. Initiate eSewa
-   * 5. Backend signs request
-   * 6. Submit form to eSewa
-   */
+  /* ======================================================
+     ESEWA PAYMENT FLOW
+
+     1. Validate checkout
+     2. Create order once
+     3. Backend calculates amount
+     4. Backend signs eSewa request
+     5. Browser redirects to eSewa
+  ====================================================== */
+
   const handleEsewaPayment =
     async () => {
       if (
@@ -352,10 +362,6 @@ const CheckoutPage = () => {
           ""
         );
 
-        /*
-         * Final frontend
-         * validation.
-         */
         const validation =
           checkoutSchema.safeParse(
             formData
@@ -377,8 +383,9 @@ const CheckoutPage = () => {
           createdOrderId;
 
         /*
-         * Create the backend
-         * order only once.
+         * Avoid duplicate orders
+         * when payment initiation
+         * is retried.
          */
         if (!orderId) {
           const order =
@@ -394,38 +401,28 @@ const CheckoutPage = () => {
             orderId
           );
 
-          /*
-           * Useful after returning
-           * from eSewa and for
-           * payment recovery.
-           */
           localStorage.setItem(
             "pending_order_id",
             orderId
           );
         }
 
-        /*
-         * Backend creates the
-         * signed eSewa request.
-         */
         const payment =
           await initiateEsewaPayment(
             orderId
           );
 
-        /*
-         * Redirect browser to
-         * real eSewa UAT form.
-         */
         submitEsewaPayment(
           payment.paymentUrl,
           payment.formData
         );
-      } catch (error) {
+      } catch (
+        paymentStartError
+      ) {
         setPaymentError(
-          error instanceof Error
-            ? error.message
+          paymentStartError instanceof
+            Error
+            ? paymentStartError.message
             : "Unable to start payment."
         );
 
@@ -435,9 +432,10 @@ const CheckoutPage = () => {
       }
     };
 
-  /*
-   * Buyer-only route.
-   */
+  /* ======================================================
+     BUYER GUARD
+  ====================================================== */
+
   if (
     !authLoading &&
     (!isAuthenticated ||
@@ -452,10 +450,10 @@ const CheckoutPage = () => {
     );
   }
 
-  /*
-   * Empty cart cannot
-   * enter checkout.
-   */
+  /* ======================================================
+     EMPTY CART GUARD
+  ====================================================== */
+
   if (
     !cartLoading &&
     cart &&
@@ -471,40 +469,66 @@ const CheckoutPage = () => {
     );
   }
 
+  /* ======================================================
+     SHARED INPUT CLASS
+  ====================================================== */
+
+  const inputClass = (
+    hasError: boolean
+  ) =>
+    `h-12 w-full rounded-xl border bg-white px-4 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 ${
+      hasError
+        ? "border-danger focus:border-danger focus:ring-2 focus:ring-danger/10"
+        : "border-border focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
+    }`;
+
+  /* ======================================================
+     PAGE
+  ====================================================== */
+
   return (
     <>
       <Header />
 
-      <main className="bg-white">
-        <Container className="py-10 lg:py-14">
+      <main className="min-h-screen bg-primary-50/50">
+        <Container className="py-8 sm:py-10 lg:py-12">
           {/* Back */}
 
           <Link
             to="/cart"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-black/50 transition hover:text-black"
+            className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-primary-500 transition hover:text-brand-700"
           >
             <ArrowLeft
               size={16}
             />
 
-            Back to cart
+            Back to Cart
           </Link>
 
           {/* Heading */}
 
-          <div className="mb-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
-              Secure checkout
+          <div className="mb-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+              Secure Checkout
             </p>
 
-            <h1 className="mt-2 text-4xl font-black uppercase tracking-[-0.04em] sm:text-5xl">
-              Checkout
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
+              Complete Your Order
             </h1>
+
+            <p className="mt-2 text-sm text-primary-500">
+              Delivery, review
+              and secure payment
+              in three simple
+              steps.
+            </p>
           </div>
 
-          {/* Step Indicator */}
+          {/* =================================================
+              STEP INDICATOR
+          ================================================= */}
 
-          <div className="mb-10 grid grid-cols-3 gap-3">
+          <div className="mb-8 grid grid-cols-3 gap-2 sm:gap-3">
             {steps.map(
               (
                 step,
@@ -518,56 +542,78 @@ const CheckoutPage = () => {
                   currentStep >
                   step.id;
 
+                const Icon =
+                  step.icon;
+
                 return (
                   <div
                     key={
                       step.id
                     }
+                    className={`rounded-xl border px-3 py-3 transition sm:px-4 sm:py-4 ${
+                      active
+                        ? "border-brand-300 bg-brand-50"
+                        : complete
+                          ? "border-border bg-white"
+                          : "border-border bg-white/60"
+                    }`}
                   >
-                    <div
-                      className={`flex items-center gap-3 rounded-2xl border px-3 py-4 transition sm:px-4 ${
-                        active
-                          ? "border-black bg-black text-white"
-                          : complete
-                            ? "border-black/10 bg-[#f4f4f4]"
-                            : "border-black/10 bg-white text-black/40"
-                      }`}
-                    >
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                           active
-                            ? "bg-white text-black"
+                            ? "bg-brand-600 text-white"
                             : complete
-                              ? "bg-black text-white"
-                              : "bg-[#f0f0f0]"
+                              ? "bg-success text-white"
+                              : "bg-primary-100 text-primary-400"
                         }`}
                       >
                         {complete ? (
                           <Check
-                            size={
-                              15
-                            }
+                            size={14}
                           />
                         ) : (
-                          step.id
+                          <Icon
+                            size={15}
+                          />
                         )}
                       </div>
 
                       <div className="hidden sm:block">
-                        <p className="text-xs uppercase tracking-[0.1em] opacity-60">
+                        <p
+                          className={`text-[10px] font-bold uppercase tracking-[0.12em] ${
+                            active
+                              ? "text-brand-700"
+                              : "text-primary-400"
+                          }`}
+                        >
                           Step{" "}
                           {index +
                             1}
                         </p>
 
-                        <p className="mt-0.5 text-sm font-semibold">
+                        <p
+                          className={`mt-0.5 text-sm font-semibold ${
+                            active
+                              ? "text-primary-900"
+                              : complete
+                                ? "text-primary-700"
+                                : "text-primary-400"
+                          }`}
+                        >
                           {
                             step.label
                           }
                         </p>
                       </div>
 
-                      <span className="text-xs font-semibold sm:hidden">
+                      <span
+                        className={`text-[11px] font-semibold sm:hidden ${
+                          active
+                            ? "text-brand-700"
+                            : "text-primary-500"
+                        }`}
+                      >
                         {
                           step.label
                         }
@@ -579,38 +625,49 @@ const CheckoutPage = () => {
             )}
           </div>
 
-          {/* =====================
-              STEP 1
-              DELIVERY
-          ====================== */}
+          {/* =================================================
+              STEP 1 - DELIVERY
+          ================================================= */}
 
           {currentStep ===
             1 && (
-            <div className="mx-auto max-w-[850px] rounded-[24px] border border-black/10 p-6 sm:p-8 lg:p-10">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">
-                  Step 1
-                </p>
+            <div className="mx-auto max-w-[860px] overflow-hidden rounded-2xl border border-border bg-white">
+              {/* Card heading */}
 
-                <h2 className="mt-2 text-2xl font-bold">
-                  Delivery
-                  Details
-                </h2>
+              <div className="border-b border-border px-6 py-6 sm:px-8">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                    <MapPin
+                      size={20}
+                    />
+                  </div>
 
-                <p className="mt-2 text-sm leading-6 text-black/50">
-                  Enter the
-                  address where
-                  you want your
-                  order
-                  delivered.
-                </p>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                      Delivery
+                    </p>
+
+                    <h2 className="mt-1 text-xl font-black text-primary-900 sm:text-2xl">
+                      Delivery
+                      Details
+                    </h2>
+
+                    <p className="mt-1 text-sm leading-6 text-primary-500">
+                      Enter the
+                      address where
+                      your order
+                      should be
+                      delivered.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <form
                 onSubmit={
                   handleDeliverySubmit
                 }
-                className="mt-8"
+                className="p-6 sm:p-8"
               >
                 {/* Name / Phone */}
 
@@ -618,11 +675,11 @@ const CheckoutPage = () => {
                   <div>
                     <label
                       htmlFor="fullName"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-2 block text-sm font-semibold text-primary-800"
                     >
-                      Full name
+                      Full Name
 
-                      <span className="ml-1 text-red-500">
+                      <span className="ml-1 text-danger">
                         *
                       </span>
                     </label>
@@ -647,15 +704,15 @@ const CheckoutPage = () => {
                         )
                       }
                       placeholder="Enter your full name"
-                      className={`h-13 w-full rounded-2xl border px-4 text-sm outline-none transition ${
-                        errors.fullName
-                          ? "border-red-400"
-                          : "border-black/10 focus:border-black/40"
-                      }`}
+                      className={inputClass(
+                        Boolean(
+                          errors.fullName
+                        )
+                      )}
                     />
 
                     {errors.fullName && (
-                      <p className="mt-2 text-xs text-red-500">
+                      <p className="mt-2 text-xs font-medium text-danger">
                         {
                           errors.fullName
                         }
@@ -666,12 +723,11 @@ const CheckoutPage = () => {
                   <div>
                     <label
                       htmlFor="phone"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-2 block text-sm font-semibold text-primary-800"
                     >
-                      Phone
-                      number
+                      Phone Number
 
-                      <span className="ml-1 text-red-500">
+                      <span className="ml-1 text-danger">
                         *
                       </span>
                     </label>
@@ -696,15 +752,15 @@ const CheckoutPage = () => {
                         )
                       }
                       placeholder="98XXXXXXXX"
-                      className={`h-13 w-full rounded-2xl border px-4 text-sm outline-none transition ${
-                        errors.phone
-                          ? "border-red-400"
-                          : "border-black/10 focus:border-black/40"
-                      }`}
+                      className={inputClass(
+                        Boolean(
+                          errors.phone
+                        )
+                      )}
                     />
 
                     {errors.phone && (
-                      <p className="mt-2 text-xs text-red-500">
+                      <p className="mt-2 text-xs font-medium text-danger">
                         {
                           errors.phone
                         }
@@ -718,11 +774,11 @@ const CheckoutPage = () => {
                 <div className="mt-5">
                   <label
                     htmlFor="addressLine"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-2 block text-sm font-semibold text-primary-800"
                   >
                     Address
 
-                    <span className="ml-1 text-red-500">
+                    <span className="ml-1 text-danger">
                       *
                     </span>
                   </label>
@@ -747,15 +803,15 @@ const CheckoutPage = () => {
                       )
                     }
                     placeholder="Street, ward, area or landmark"
-                    className={`h-13 w-full rounded-2xl border px-4 text-sm outline-none transition ${
-                      errors.addressLine
-                        ? "border-red-400"
-                        : "border-black/10 focus:border-black/40"
-                    }`}
+                    className={inputClass(
+                      Boolean(
+                        errors.addressLine
+                      )
+                    )}
                   />
 
                   {errors.addressLine && (
-                    <p className="mt-2 text-xs text-red-500">
+                    <p className="mt-2 text-xs font-medium text-danger">
                       {
                         errors.addressLine
                       }
@@ -769,11 +825,11 @@ const CheckoutPage = () => {
                   <div>
                     <label
                       htmlFor="city"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-2 block text-sm font-semibold text-primary-800"
                     >
                       City
 
-                      <span className="ml-1 text-red-500">
+                      <span className="ml-1 text-danger">
                         *
                       </span>
                     </label>
@@ -798,15 +854,15 @@ const CheckoutPage = () => {
                         )
                       }
                       placeholder="Kathmandu"
-                      className={`h-13 w-full rounded-2xl border px-4 text-sm outline-none transition ${
-                        errors.city
-                          ? "border-red-400"
-                          : "border-black/10 focus:border-black/40"
-                      }`}
+                      className={inputClass(
+                        Boolean(
+                          errors.city
+                        )
+                      )}
                     />
 
                     {errors.city && (
-                      <p className="mt-2 text-xs text-red-500">
+                      <p className="mt-2 text-xs font-medium text-danger">
                         {
                           errors.city
                         }
@@ -817,11 +873,11 @@ const CheckoutPage = () => {
                   <div>
                     <label
                       htmlFor="country"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-2 block text-sm font-semibold text-primary-800"
                     >
                       Country
 
-                      <span className="ml-1 text-red-500">
+                      <span className="ml-1 text-danger">
                         *
                       </span>
                     </label>
@@ -846,15 +902,15 @@ const CheckoutPage = () => {
                         )
                       }
                       placeholder="Nepal"
-                      className={`h-13 w-full rounded-2xl border px-4 text-sm outline-none transition ${
-                        errors.country
-                          ? "border-red-400"
-                          : "border-black/10 focus:border-black/40"
-                      }`}
+                      className={inputClass(
+                        Boolean(
+                          errors.country
+                        )
+                      )}
                     />
 
                     {errors.country && (
-                      <p className="mt-2 text-xs text-red-500">
+                      <p className="mt-2 text-xs font-medium text-danger">
                         {
                           errors.country
                         }
@@ -865,23 +921,22 @@ const CheckoutPage = () => {
 
                 {/* Actions */}
 
-                <div className="mt-8 flex flex-col-reverse items-center justify-between gap-4 border-t border-black/10 pt-7 sm:flex-row">
+                <div className="mt-8 flex flex-col-reverse items-center justify-between gap-4 border-t border-border pt-6 sm:flex-row">
                   <Link
                     to="/cart"
-                    className="text-sm font-medium text-black/50 transition hover:text-black"
+                    className="text-sm font-semibold text-primary-500 transition hover:text-brand-700"
                   >
-                    Return to
-                    cart
+                    Return to Cart
                   </Link>
 
                   <button
                     type="submit"
-                    className="flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-black px-8 text-sm font-semibold text-white transition hover:bg-black/80 sm:w-auto"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-7 text-sm font-semibold text-white transition hover:bg-brand-700 sm:w-auto"
                   >
                     Review Order
 
                     <ArrowRight
-                      size={17}
+                      size={16}
                     />
                   </button>
                 </div>
@@ -889,39 +944,37 @@ const CheckoutPage = () => {
             </div>
           )}
 
-          {/* =====================
-              STEP 2
-              REVIEW
-          ====================== */}
+          {/* =================================================
+              STEP 2 - REVIEW
+          ================================================= */}
 
           {currentStep ===
             2 && (
-            <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]">
-              <div className="space-y-6">
+            <div className="grid items-start gap-7 lg:grid-cols-[1fr_370px] xl:grid-cols-[1fr_400px]">
+              <div className="space-y-5">
                 {/* Products */}
 
-                <section className="rounded-[24px] border border-black/10 p-5 sm:p-6">
+                <section className="rounded-2xl border border-border bg-white p-5 sm:p-6">
                   <div className="mb-5 flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">
-                        Step 2
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                        Review
                       </p>
 
-                      <h2 className="mt-2 text-2xl font-bold">
-                        Review
-                        Order
+                      <h2 className="mt-1 text-xl font-black text-primary-900 sm:text-2xl">
+                        Your Order
                       </h2>
                     </div>
 
                     <Link
                       to="/cart"
-                      className="text-sm font-medium text-black/45 transition hover:text-black"
+                      className="text-sm font-semibold text-primary-400 transition hover:text-brand-700"
                     >
-                      Edit cart
+                      Edit Cart
                     </Link>
                   </div>
 
-                  <div className="divide-y divide-black/10">
+                  <div className="divide-y divide-border">
                     {items.map(
                       (
                         item,
@@ -936,13 +989,12 @@ const CheckoutPage = () => {
                               key={`${item.productId}-${index}`}
                               className="py-5"
                             >
-                              <p className="text-sm text-red-500">
-                                One
-                                product
+                              <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+                                One product
                                 is no
                                 longer
                                 available.
-                              </p>
+                              </div>
                             </div>
                           );
                         }
@@ -967,7 +1019,7 @@ const CheckoutPage = () => {
                           >
                             <Link
                               to={`/products/${product._id}`}
-                              className="h-[90px] w-[85px] shrink-0 overflow-hidden rounded-[14px] bg-[#f0f0f0] sm:h-[105px] sm:w-[100px]"
+                              className="h-[88px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-primary-50 sm:h-[100px] sm:w-[95px]"
                             >
                               {image ? (
                                 <img
@@ -980,10 +1032,10 @@ const CheckoutPage = () => {
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center text-black/20">
+                                <div className="flex h-full w-full items-center justify-center text-primary-300">
                                   <Package
                                     size={
-                                      25
+                                      24
                                     }
                                   />
                                 </div>
@@ -994,14 +1046,14 @@ const CheckoutPage = () => {
                               <div>
                                 <Link
                                   to={`/products/${product._id}`}
-                                  className="line-clamp-2 font-semibold"
+                                  className="line-clamp-2 text-sm font-semibold text-primary-900 transition hover:text-brand-700 sm:text-base"
                                 >
                                   {
                                     product.name
                                   }
                                 </Link>
 
-                                <p className="mt-2 text-sm text-black/45">
+                                <p className="mt-2 text-xs text-primary-400 sm:text-sm">
                                   NPR{" "}
                                   {product.price.toLocaleString(
                                     "en-NP"
@@ -1013,7 +1065,7 @@ const CheckoutPage = () => {
                                 </p>
                               </div>
 
-                              <p className="shrink-0 font-bold">
+                              <p className="shrink-0 text-sm font-bold text-primary-900 sm:text-base">
                                 NPR{" "}
                                 {lineTotal.toLocaleString(
                                   "en-NP"
@@ -1029,15 +1081,22 @@ const CheckoutPage = () => {
 
                 {/* Delivery */}
 
-                <section className="rounded-[24px] border border-black/10 p-6">
-                  <div className="flex items-start justify-between gap-4">
+                <section className="rounded-2xl border border-border bg-white p-6">
+                  <div className="flex items-start justify-between gap-5">
                     <div>
-                      <p className="text-sm font-semibold">
-                        Delivery
-                        Information
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <MapPin
+                          size={17}
+                          className="text-brand-600"
+                        />
 
-                      <p className="mt-4 font-medium">
+                        <h3 className="text-sm font-bold text-primary-900">
+                          Delivery
+                          Information
+                        </h3>
+                      </div>
+
+                      <p className="mt-4 font-semibold text-primary-900">
                         {
                           formData
                             .shippingAddress
@@ -1045,7 +1104,7 @@ const CheckoutPage = () => {
                         }
                       </p>
 
-                      <p className="mt-1 text-sm leading-6 text-black/55">
+                      <p className="mt-1 text-sm leading-6 text-primary-500">
                         {
                           formData
                             .shippingAddress
@@ -1059,7 +1118,7 @@ const CheckoutPage = () => {
                         }
                       </p>
 
-                      <p className="text-sm leading-6 text-black/55">
+                      <p className="text-sm leading-6 text-primary-500">
                         {
                           formData
                             .shippingAddress
@@ -1067,7 +1126,7 @@ const CheckoutPage = () => {
                         }
                       </p>
 
-                      <p className="mt-2 text-sm text-black/55">
+                      <p className="mt-2 text-sm text-primary-500">
                         {
                           formData
                             .shippingAddress
@@ -1081,7 +1140,7 @@ const CheckoutPage = () => {
                       onClick={
                         goToDelivery
                       }
-                      className="text-sm font-medium underline underline-offset-4"
+                      className="text-sm font-semibold text-brand-700 transition hover:text-brand-800"
                     >
                       Edit
                     </button>
@@ -1091,18 +1150,22 @@ const CheckoutPage = () => {
 
               {/* Summary */}
 
-              <aside className="rounded-[24px] border border-black/10 p-6 lg:sticky lg:top-6">
-                <h2 className="text-xl font-bold">
+              <aside className="rounded-2xl border border-border bg-white p-6 lg:sticky lg:top-[115px]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                  Summary
+                </p>
+
+                <h2 className="mt-2 text-xl font-black text-primary-900">
                   Order Summary
                 </h2>
 
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-black/55">
+                    <span className="text-primary-500">
                       Products
                     </span>
 
-                    <span>
+                    <span className="font-semibold text-primary-800">
                       {itemCount}{" "}
                       {itemCount ===
                       1
@@ -1112,11 +1175,11 @@ const CheckoutPage = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-black/55">
+                    <span className="text-primary-500">
                       Subtotal
                     </span>
 
-                    <span className="font-medium">
+                    <span className="font-semibold text-primary-900">
                       NPR{" "}
                       {subtotal.toLocaleString(
                         "en-NP"
@@ -1125,24 +1188,24 @@ const CheckoutPage = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-black/55">
+                    <span className="text-primary-500">
                       Delivery
                     </span>
 
-                    <span className="font-medium">
+                    <span className="font-medium text-primary-700">
                       —
                     </span>
                   </div>
                 </div>
 
-                <div className="my-6 h-px bg-black/10" />
+                <div className="my-6 h-px bg-border" />
 
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="text-sm font-semibold text-primary-700">
                     Total
                   </span>
 
-                  <span className="text-2xl font-bold">
+                  <span className="text-2xl font-black tracking-tight text-primary-900">
                     NPR{" "}
                     {subtotal.toLocaleString(
                       "en-NP"
@@ -1150,26 +1213,33 @@ const CheckoutPage = () => {
                   </span>
                 </div>
 
-                <p className="mt-3 text-xs leading-5 text-black/40">
-                  Final prices
-                  and stock are
-                  validated again
-                  by the server
-                  before payment.
-                </p>
+                <div className="mt-5 flex gap-3 rounded-xl bg-brand-50 p-4">
+                  <ShieldCheck
+                    size={18}
+                    className="shrink-0 text-brand-700"
+                  />
+
+                  <p className="text-xs leading-5 text-primary-600">
+                    Price and stock
+                    are verified
+                    again by the
+                    backend before
+                    payment.
+                  </p>
+                </div>
 
                 <button
                   type="button"
                   onClick={
                     goToPayment
                   }
-                  className="mt-7 flex h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white transition hover:bg-black/80"
+                  className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-6 text-sm font-semibold text-white transition hover:bg-brand-700"
                 >
                   Continue to
                   Payment
 
                   <ArrowRight
-                    size={17}
+                    size={16}
                   />
                 </button>
 
@@ -1178,170 +1248,204 @@ const CheckoutPage = () => {
                   onClick={
                     goToDelivery
                   }
-                  className="mt-4 w-full text-center text-sm font-medium text-black/50 transition hover:text-black"
+                  className="mt-4 w-full text-center text-sm font-semibold text-primary-400 transition hover:text-brand-700"
                 >
-                  Back to
-                  delivery
+                  Back to Delivery
                 </button>
               </aside>
             </div>
           )}
 
-          {/* =====================
-              STEP 3
-              PAYMENT
-          ====================== */}
+          {/* =================================================
+              STEP 3 - PAYMENT
+          ================================================= */}
 
           {currentStep ===
             3 && (
-            <div className="mx-auto max-w-[850px] rounded-[24px] border border-black/10 p-6 sm:p-8 lg:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">
-                Step 3
-              </p>
+            <div className="mx-auto max-w-[760px] overflow-hidden rounded-2xl border border-border bg-white">
+              {/* Heading */}
 
-              <h2 className="mt-2 text-2xl font-bold">
-                Payment
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-black/50">
-                Complete your
-                purchase securely
-                using eSewa.
-              </p>
-
-              {/* Total */}
-
-              <div className="mt-7 rounded-2xl bg-[#f7f7f7] p-5">
-                <div className="flex items-center justify-between gap-5">
-                  <span className="text-sm text-black/55">
-                    Order amount
-                  </span>
-
-                  <span className="text-xl font-bold">
-                    NPR{" "}
-                    {subtotal.toLocaleString(
-                      "en-NP"
-                    )}
-                  </span>
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-black/40">
-                  The backend
-                  calculates and
-                  verifies the
-                  final amount
-                  before creating
-                  the eSewa
-                  payment.
-                </p>
-              </div>
-
-              {/* Payment option */}
-
-              <div className="mt-6 rounded-[20px] border-2 border-black p-5">
+              <div className="border-b border-border px-6 py-6 sm:px-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f3f3] text-sm font-black">
-                    eS
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                    <CreditCard
+                      size={20}
+                    />
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">
-                        eSewa
-                      </h3>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                      Payment
+                    </p>
 
-                      <span className="rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
-                        Selected
-                      </span>
-                    </div>
+                    <h2 className="mt-1 text-xl font-black text-primary-900 sm:text-2xl">
+                      Secure Payment
+                    </h2>
 
-                    <p className="mt-2 text-sm leading-6 text-black/50">
-                      You will be
-                      redirected to
-                      eSewa to
-                      securely
-                      complete your
-                      payment.
+                    <p className="mt-1 text-sm leading-6 text-primary-500">
+                      Complete your
+                      purchase using
+                      eSewa.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Payment error */}
+              <div className="p-6 sm:p-8">
+                {/* Amount */}
 
-              {paymentError && (
-                <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                  {
-                    paymentError
-                  }
+                <div className="rounded-xl bg-primary-50 p-5">
+                  <div className="flex items-end justify-between gap-5">
+                    <span className="text-sm text-primary-500">
+                      Order Amount
+                    </span>
+
+                    <span className="text-2xl font-black tracking-tight text-primary-900">
+                      NPR{" "}
+                      {subtotal.toLocaleString(
+                        "en-NP"
+                      )}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-xs leading-5 text-primary-400">
+                    The backend
+                    recalculates and
+                    verifies this
+                    amount before
+                    creating the
+                    payment request.
+                  </p>
                 </div>
-              )}
 
-              {/* If order already
-                  exists after an
-                  initiation error */}
+                {/* eSewa */}
 
-              {createdOrderId &&
-                paymentError && (
-                  <div className="mt-4 rounded-2xl bg-[#f7f7f7] px-4 py-3 text-xs leading-5 text-black/50">
-                    Your order was
-                    already
-                    created. Retry
-                    payment without
-                    creating another
-                    order.
+                <div className="mt-6 rounded-xl border-2 border-[#60bb46] bg-[#f7fff5] p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#60bb46] text-sm font-black text-white">
+                      eS
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold text-primary-900">
+                          eSewa
+                        </h3>
+
+                        <span className="rounded-full bg-[#60bb46] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
+                          Selected
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-primary-500">
+                        You will be
+                        redirected to
+                        eSewa to
+                        securely
+                        complete your
+                        payment.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security */}
+
+                <div className="mt-5 flex gap-3 rounded-xl border border-border p-4">
+                  <ShieldCheck
+                    size={20}
+                    className="shrink-0 text-brand-700"
+                  />
+
+                  <div>
+                    <p className="text-sm font-semibold text-primary-900">
+                      Server verified
+                      payment
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-primary-500">
+                      Your order is
+                      marked as paid
+                      only after the
+                      backend verifies
+                      the eSewa
+                      payment.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Payment error */}
+
+                {paymentError && (
+                  <div className="mt-5 rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+                    {
+                      paymentError
+                    }
                   </div>
                 )}
 
-              {/* Pay */}
+                {/* Retry notice */}
 
-              <button
-                type="button"
-                disabled={
-                  paymentLoading
-                }
-                onClick={() =>
-                  void handleEsewaPayment()
-                }
-                className="mt-7 flex h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-7 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {paymentLoading
-                  ? "Redirecting to eSewa..."
-                  : createdOrderId &&
-                      paymentError
-                    ? "Retry eSewa Payment"
-                    : `Pay NPR ${subtotal.toLocaleString(
-                        "en-NP"
-                      )} with eSewa`}
-              </button>
+                {createdOrderId &&
+                  paymentError && (
+                    <div className="mt-4 rounded-xl bg-warning-soft px-4 py-3 text-xs leading-5 text-warning">
+                      Your order
+                      already exists.
+                      Retrying payment
+                      will not create
+                      another order.
+                    </div>
+                  )}
 
-              {/* Back is safe
-                  only before order
-                  has been created */}
+                {/* Pay */}
 
-              {!createdOrderId && (
                 <button
                   type="button"
                   disabled={
                     paymentLoading
                   }
-                  onClick={
-                    goToReview
+                  onClick={() =>
+                    void handleEsewaPayment()
                   }
-                  className="mt-5 flex w-full items-center justify-center gap-2 text-sm font-medium text-black/50 transition hover:text-black disabled:opacity-40"
+                  className="mt-7 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#60bb46] px-7 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <ArrowLeft
-                    size={16}
-                  />
-
-                  Back to
-                  review
+                  {paymentLoading
+                    ? "Redirecting to eSewa..."
+                    : createdOrderId &&
+                        paymentError
+                      ? "Retry eSewa Payment"
+                      : `Pay NPR ${subtotal.toLocaleString(
+                          "en-NP"
+                        )} with eSewa`}
                 </button>
-              )}
+
+                {/* Back */}
+
+                {!createdOrderId && (
+                  <button
+                    type="button"
+                    disabled={
+                      paymentLoading
+                    }
+                    onClick={
+                      goToReview
+                    }
+                    className="mt-5 flex w-full items-center justify-center gap-2 text-sm font-semibold text-primary-400 transition hover:text-brand-700 disabled:opacity-40"
+                  >
+                    <ArrowLeft
+                      size={16}
+                    />
+
+                    Back to Review
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </Container>
       </main>
+
+      <Footer />
     </>
   );
 };

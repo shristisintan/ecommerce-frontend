@@ -1,8 +1,10 @@
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   Package,
   ShoppingBag,
+  Store,
 } from "lucide-react";
 
 import {
@@ -64,6 +66,10 @@ const MerchantDashboard = () => {
     setError,
   ] = useState("");
 
+  /* ======================================================
+     LOAD DASHBOARD
+  ====================================================== */
+
   useEffect(() => {
     if (!accessToken) {
       return;
@@ -73,16 +79,9 @@ const MerchantDashboard = () => {
       async () => {
         try {
           setLoading(true);
+
           setError("");
 
-          /*
-           * Get first product page.
-           *
-           * Limit 50 is currently
-           * enough for the project,
-           * but we also fetch extra
-           * pages if they exist.
-           */
           const firstProductResult =
             await getMerchantProducts(
               accessToken,
@@ -95,11 +94,6 @@ const MerchantDashboard = () => {
           let allProducts =
             firstProductResult.data;
 
-          /*
-           * Fetch remaining product
-           * pages if merchant has
-           * more than 50 products.
-           */
           if (
             firstProductResult
               .pagination
@@ -114,14 +108,20 @@ const MerchantDashboard = () => {
                       .totalPages -
                     1,
                 },
-                (_, index) =>
-                  index + 2
+                (
+                  _,
+                  index
+                ) =>
+                  index +
+                  2
               );
 
             const remainingResults =
               await Promise.all(
                 remainingPages.map(
-                  (page) =>
+                  (
+                    page
+                  ) =>
                     getMerchantProducts(
                       accessToken,
                       {
@@ -135,45 +135,45 @@ const MerchantDashboard = () => {
             allProducts = [
               ...allProducts,
               ...remainingResults.flatMap(
-                (result) =>
+                (
+                  result
+                ) =>
                   result.data
               ),
             ];
           }
 
-          /*
-           * We only need one order
-           * row because pagination
-           * already gives us the
-           * merchant's total orders.
-           */
           const ordersResult =
-            await getMerchantOrders({
-              page: 1,
-              limit: 1,
-            });
+            await getMerchantOrders(
+              {
+                page: 1,
+                limit: 1,
+              }
+            );
 
           const activeProducts =
             allProducts.filter(
-              (product) =>
+              (
+                product
+              ) =>
                 product.isActive
             ).length;
 
-          /*
-           * Low stock threshold:
-           * 5 or fewer active items.
-           */
           const lowStockProducts =
             allProducts.filter(
-              (product) =>
+              (
+                product
+              ) =>
                 product.isActive &&
-                product.stock <= 5
+                product.stock <=
+                  5
             ).length;
 
           setStats({
             totalProducts:
               firstProductResult
-                .pagination.total,
+                .pagination
+                .total,
 
             activeProducts,
 
@@ -181,7 +181,8 @@ const MerchantDashboard = () => {
 
             totalOrders:
               ordersResult
-                .pagination.total,
+                .pagination
+                .total,
           });
         } catch (
           loadError
@@ -200,70 +201,70 @@ const MerchantDashboard = () => {
     void loadDashboard();
   }, [accessToken]);
 
-  const cards = [
+  const statCards = [
     {
-      title:
+      label:
         "Total Products",
 
       value:
         stats.totalProducts,
 
-      description:
-        "All products in your store",
-
       icon:
         Package,
+
+      iconClass:
+        "bg-brand-50 text-brand-700",
 
       to:
         "/merchant/products",
     },
 
     {
-      title:
+      label:
         "Active Products",
 
       value:
         stats.activeProducts,
 
-      description:
-        "Currently visible to buyers",
-
       icon:
         CheckCircle2,
+
+      iconClass:
+        "bg-success-soft text-success",
 
       to:
         "/merchant/products",
     },
 
     {
-      title:
+      label:
         "Low Stock",
 
       value:
         stats.lowStockProducts,
 
-      description:
-        "Products with 5 or fewer items",
-
       icon:
         AlertTriangle,
+
+      iconClass:
+        "bg-warning-soft text-warning",
 
       to:
         "/merchant/products",
     },
 
     {
-      title:
+      label:
         "Total Orders",
 
       value:
         stats.totalOrders,
 
-      description:
-        "Orders containing your products",
-
       icon:
         ShoppingBag,
+
+      iconClass:
+        "bg-info-soft text-info",
 
       to:
         "/merchant/orders",
@@ -271,143 +272,338 @@ const MerchantDashboard = () => {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-7">
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-      <div>
-        <p className="text-sm font-medium text-black/40">
-          Merchant Portal
-        </p>
+      <section className="rounded-2xl border border-border bg-white p-6 sm:p-7">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+              Merchant Dashboard
+            </p>
 
-        <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-          Welcome,{" "}
-          {user?.name}
-        </h1>
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
+              Welcome back,{" "}
+              {user?.name}
+            </h1>
 
-        <p className="mt-2 text-sm text-black/50">
-          Monitor your store,
-          inventory and orders
-          from one place.
-        </p>
-      </div>
+            <p className="mt-2 max-w-[620px] text-sm leading-6 text-primary-500">
+              Manage your store,
+              products and incoming
+              orders from one place.
+            </p>
+          </div>
 
-      {/* Error */}
+          <div className="flex items-center gap-3 rounded-xl bg-primary-50 px-4 py-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+              <Store
+                size={18}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-primary-900">
+                Merchant Account
+              </p>
+
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand-700">
+                Active
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =================================================
+          ERROR
+      ================================================= */}
 
       {error && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-600">
+        <div className="rounded-xl border border-danger/15 bg-danger-soft px-5 py-4 text-sm font-medium text-danger">
           {error}
         </div>
       )}
 
-      {/* Stats */}
+      {/* =================================================
+          STAT CARDS
+      ================================================= */}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map(
           ({
-            title,
+            label,
             value,
-            description,
             icon: Icon,
+            iconClass,
             to,
           }) => (
             <Link
               key={
-                title
+                label
               }
               to={
                 to
               }
-              className="group rounded-2xl border border-black/10 bg-white p-6 transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-sm"
+              className="group rounded-2xl border border-border bg-white p-5 transition hover:border-brand-200 hover:shadow-sm"
             >
               <div className="flex items-start justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f5f5f5] transition group-hover:bg-black group-hover:text-white">
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconClass}`}
+                >
                   <Icon
                     size={20}
                   />
                 </div>
+
+                <ArrowRight
+                  size={16}
+                  className="text-primary-300 transition group-hover:text-brand-600"
+                />
               </div>
 
-              <p className="mt-5 text-sm font-medium text-black/45">
-                {title}
+              <p className="mt-6 text-xs font-semibold text-primary-400">
+                {label}
               </p>
 
-              <p className="mt-1 text-3xl font-black tracking-tight">
+              <p className="mt-1 text-4xl font-black tracking-[-0.05em] text-primary-900">
                 {loading
                   ? "—"
                   : value}
               </p>
-
-              <p className="mt-2 text-xs leading-5 text-black/40">
-                {
-                  description
-                }
-              </p>
             </Link>
           )
         )}
-      </div>
+      </section>
 
-      {/* Quick Navigation */}
+      {/* =================================================
+          OVERVIEW SECTION
+      ================================================= */}
 
-      <div className="rounded-2xl border border-black/10 bg-white p-6">
+      <section className="grid gap-5 lg:grid-cols-2">
+        {/* Inventory Overview */}
+
+        <div className="rounded-2xl border border-border bg-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                Inventory
+              </p>
+
+              <h2 className="mt-2 text-xl font-black text-primary-900">
+                Inventory Overview
+              </h2>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+              <Package
+                size={18}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between rounded-xl bg-primary-50 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle2
+                  size={18}
+                  className="text-success"
+                />
+
+                <span className="text-sm font-semibold text-primary-700">
+                  Active Products
+                </span>
+              </div>
+
+              <span className="text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : stats.activeProducts}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl bg-primary-50 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle
+                  size={18}
+                  className="text-warning"
+                />
+
+                <span className="text-sm font-semibold text-primary-700">
+                  Low Stock
+                </span>
+              </div>
+
+              <span className="text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : stats.lowStockProducts}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            to="/merchant/products"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand-700 transition hover:text-brand-800"
+          >
+            Manage Products
+
+            <ArrowRight
+              size={15}
+            />
+          </Link>
+        </div>
+
+        {/* Store Overview */}
+
+        <div className="rounded-2xl border border-border bg-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                Store Activity
+              </p>
+
+              <h2 className="mt-2 text-xl font-black text-primary-900">
+                Store Overview
+              </h2>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info-soft text-info">
+              <ShoppingBag
+                size={18}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between rounded-xl bg-primary-50 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <Package
+                  size={18}
+                  className="text-brand-700"
+                />
+
+                <span className="text-sm font-semibold text-primary-700">
+                  Total Products
+                </span>
+              </div>
+
+              <span className="text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : stats.totalProducts}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl bg-primary-50 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <ShoppingBag
+                  size={18}
+                  className="text-info"
+                />
+
+                <span className="text-sm font-semibold text-primary-700">
+                  Total Orders
+                </span>
+              </div>
+
+              <span className="text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : stats.totalOrders}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            to="/merchant/orders"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand-700 transition hover:text-brand-800"
+          >
+            View Orders
+
+            <ArrowRight
+              size={15}
+            />
+          </Link>
+        </div>
+      </section>
+
+      {/* =================================================
+          QUICK ACTIONS
+      ================================================= */}
+
+      <section className="rounded-2xl border border-border bg-white p-6">
         <div>
-          <h2 className="text-lg font-bold">
-            Quick Access
-          </h2>
-
-          <p className="mt-1 text-sm text-black/45">
-            Manage the main areas
-            of your store.
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">
+            Quick Actions
           </p>
+
+          <h2 className="mt-2 text-xl font-black text-primary-900">
+            Manage Your Store
+          </h2>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <Link
             to="/merchant/products"
-            className="flex items-center gap-4 rounded-xl border border-black/10 p-4 transition hover:bg-[#f7f7f7]"
+            className="group flex items-center justify-between rounded-xl border border-border p-4 transition hover:border-brand-200 hover:bg-brand-50/40"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5]">
-              <Package
-                size={18}
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                <Package
+                  size={18}
+                />
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-primary-900">
+                  Manage Products
+                </p>
+
+                <p className="mt-1 text-xs text-primary-400">
+                  Add and update
+                  products.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm font-semibold">
-                Manage Products
-              </p>
-
-              <p className="mt-1 text-xs text-black/40">
-                Add, edit and
-                manage inventory.
-              </p>
-            </div>
+            <ArrowRight
+              size={17}
+              className="text-primary-300 transition group-hover:text-brand-600"
+            />
           </Link>
 
           <Link
             to="/merchant/orders"
-            className="flex items-center gap-4 rounded-xl border border-black/10 p-4 transition hover:bg-[#f7f7f7]"
+            className="group flex items-center justify-between rounded-xl border border-border p-4 transition hover:border-brand-200 hover:bg-brand-50/40"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5]">
-              <ShoppingBag
-                size={18}
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info-soft text-info">
+                <ShoppingBag
+                  size={18}
+                />
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-primary-900">
+                  View Orders
+                </p>
+
+                <p className="mt-1 text-xs text-primary-400">
+                  Review marketplace
+                  orders.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm font-semibold">
-                View Orders
-              </p>
-
-              <p className="mt-1 text-xs text-black/40">
-                Review orders
-                containing your
-                products.
-              </p>
-            </div>
+            <ArrowRight
+              size={17}
+              className="text-primary-300 transition group-hover:text-brand-600"
+            />
           </Link>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

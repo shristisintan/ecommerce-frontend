@@ -1,8 +1,11 @@
 import {
+  CheckCircle2,
+  CircleOff,
   Pencil,
   Plus,
   RotateCcw,
   Search,
+  Shapes,
   Trash2,
   X,
 } from "lucide-react";
@@ -11,6 +14,10 @@ import {
   useEffect,
   useMemo,
   useState,
+} from "react";
+
+import type {
+  FormEvent,
 } from "react";
 
 import {
@@ -23,6 +30,10 @@ import {
 import type {
   Category,
 } from "../../types/category";
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const slugify = (
   value: string
@@ -39,379 +50,455 @@ const slugify = (
       ""
     );
 
-const AdminCategoriesPage =
-  () => {
-    const [
-      categories,
-      setCategories,
-    ] =
-      useState<Category[]>([]);
+/* =========================================================
+   PAGE
+========================================================= */
 
-    const [
-      loading,
-      setLoading,
-    ] =
-      useState(true);
+const AdminCategoriesPage = () => {
+  const [
+    categories,
+    setCategories,
+  ] =
+    useState<Category[]>([]);
 
-    const [
-      error,
-      setError,
-    ] = useState("");
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-    const [
-      search,
-      setSearch,
-    ] = useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-    const [
-      modalOpen,
-      setModalOpen,
-    ] = useState(false);
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
-    const [
-      editingCategory,
-      setEditingCategory,
-    ] =
-      useState<
-        Category | null
-      >(null);
+  const [
+    modalOpen,
+    setModalOpen,
+  ] = useState(false);
 
-    const [
-      name,
-      setName,
-    ] = useState("");
+  const [
+    editingCategory,
+    setEditingCategory,
+  ] =
+    useState<Category | null>(
+      null
+    );
 
-    const [
-      slug,
-      setSlug,
-    ] = useState("");
+  const [
+    name,
+    setName,
+  ] = useState("");
 
-    const [
-      saving,
-      setSaving,
-    ] = useState(false);
+  const [
+    slug,
+    setSlug,
+  ] = useState("");
 
-    const [
-      categoryToDeactivate,
-      setCategoryToDeactivate,
-    ] =
-      useState<
-        Category | null
-      >(null);
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
-    const [
-      processingId,
-      setProcessingId,
-    ] =
-      useState<
-        string | null
-      >(null);
+  const [
+    categoryToDeactivate,
+    setCategoryToDeactivate,
+  ] =
+    useState<Category | null>(
+      null
+    );
 
-    const loadCategories =
-      async () => {
-        try {
-          setLoading(true);
-          setError("");
+  const [
+    processingId,
+    setProcessingId,
+  ] =
+    useState<string | null>(
+      null
+    );
 
-          const result =
-            await getAdminCategories();
+  /* ======================================================
+     LOAD CATEGORIES
+  ====================================================== */
 
-          setCategories(
-            result.data
-          );
-        } catch (
-          loadError
-        ) {
-          setError(
-            loadError instanceof
-              Error
-              ? loadError.message
-              : "Unable to load categories."
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
+  const loadCategories =
+    async () => {
+      try {
+        setLoading(true);
 
-    useEffect(() => {
-      void loadCategories();
-    }, []);
-
-    const filteredCategories =
-      useMemo(() => {
-        const query =
-          search
-            .trim()
-            .toLowerCase();
-
-        if (!query) {
-          return categories;
-        }
-
-        return categories.filter(
-          (category) =>
-            category.name
-              .toLowerCase()
-              .includes(
-                query
-              ) ||
-            category.slug
-              .toLowerCase()
-              .includes(
-                query
-              )
-        );
-      }, [
-        categories,
-        search,
-      ]);
-
-    const openAddModal =
-      () => {
-        setEditingCategory(
-          null
-        );
-
-        setName("");
-        setSlug("");
         setError("");
-        setModalOpen(true);
-      };
 
-    const openEditModal =
-      (
-        category: Category
-      ) => {
-        setEditingCategory(
+        const result =
+          await getAdminCategories();
+
+        setCategories(
+          result.data
+        );
+      } catch (
+        loadError
+      ) {
+        setError(
+          loadError instanceof
+            Error
+            ? loadError.message
+            : "Unable to load categories."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  useEffect(() => {
+    void loadCategories();
+  }, []);
+
+  /* ======================================================
+     FILTERED CATEGORIES
+  ====================================================== */
+
+  const filteredCategories =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
+
+      if (!query) {
+        return categories;
+      }
+
+      return categories.filter(
+        (
           category
-        );
-
-        setName(
+        ) =>
           category.name
+            .toLowerCase()
+            .includes(
+              query
+            ) ||
+          category.slug
+            .toLowerCase()
+            .includes(
+              query
+            )
+      );
+    }, [
+      categories,
+      search,
+    ]);
+
+  /* ======================================================
+     CATEGORY COUNTS
+  ====================================================== */
+
+  const activeCount =
+    categories.filter(
+      (
+        category
+      ) =>
+        category.isActive
+    ).length;
+
+  const inactiveCount =
+    categories.length -
+    activeCount;
+
+  /* ======================================================
+     MODAL HELPERS
+  ====================================================== */
+
+  const resetModal = () => {
+    setModalOpen(false);
+
+    setEditingCategory(
+      null
+    );
+
+    setName("");
+
+    setSlug("");
+  };
+
+  const openAddModal =
+    () => {
+      setEditingCategory(
+        null
+      );
+
+      setName("");
+
+      setSlug("");
+
+      setError("");
+
+      setModalOpen(true);
+    };
+
+  const openEditModal = (
+    category: Category
+  ) => {
+    setEditingCategory(
+      category
+    );
+
+    setName(
+      category.name
+    );
+
+    setSlug(
+      category.slug
+    );
+
+    setError("");
+
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (saving) {
+      return;
+    }
+
+    resetModal();
+
+    setError("");
+  };
+
+  /* ======================================================
+     NAME / SLUG
+  ====================================================== */
+
+  const handleNameChange = (
+    value: string
+  ) => {
+    setName(value);
+
+    /*
+     * During creation the slug
+     * follows the category name.
+     *
+     * During editing it keeps
+     * following the old name only
+     * if the administrator has not
+     * manually customized it.
+     */
+    if (
+      !editingCategory ||
+      slug ===
+        slugify(
+          editingCategory.name
+        )
+    ) {
+      setSlug(
+        slugify(value)
+      );
+    }
+  };
+
+  /* ======================================================
+     ADD / EDIT CATEGORY
+  ====================================================== */
+
+  const handleSubmit =
+    async (
+      event: FormEvent<HTMLFormElement>
+    ) => {
+      event.preventDefault();
+
+      const cleanedName =
+        name.trim();
+
+      const cleanedSlug =
+        slug
+          .trim()
+          .toLowerCase();
+
+      if (
+        cleanedName.length <
+        2
+      ) {
+        setError(
+          "Category name must contain at least 2 characters."
         );
 
-        setSlug(
-          category.slug
+        return;
+      }
+
+      if (
+        !/^[a-z0-9-]+$/.test(
+          cleanedSlug
+        )
+      ) {
+        setError(
+          "Slug may contain lowercase letters, numbers and hyphens only."
         );
+
+        return;
+      }
+
+      try {
+        setSaving(true);
 
         setError("");
-        setModalOpen(true);
-      };
-
-    const closeModal =
-      () => {
-        if (saving) {
-          return;
-        }
-
-        setModalOpen(false);
-        setEditingCategory(
-          null
-        );
-        setName("");
-        setSlug("");
-      };
-
-    const handleNameChange =
-      (
-        value: string
-      ) => {
-        setName(value);
-
-        /*
-         * Keep slug convenient.
-         */
-        if (
-          !editingCategory ||
-          slug ===
-            slugify(
-              editingCategory.name
-            )
-        ) {
-          setSlug(
-            slugify(value)
-          );
-        }
-      };
-
-    const handleSubmit =
-      async (
-        event:
-          React.FormEvent<HTMLFormElement>
-      ) => {
-        event.preventDefault();
-
-        const cleanedName =
-          name.trim();
-
-        const cleanedSlug =
-          slug
-            .trim()
-            .toLowerCase();
 
         if (
-          cleanedName.length <
-          2
+          editingCategory
         ) {
-          setError(
-            "Category name must contain at least 2 characters."
-          );
-
-          return;
-        }
-
-        if (
-          !/^[a-z0-9-]+$/.test(
-            cleanedSlug
-          )
-        ) {
-          setError(
-            "Slug may contain lowercase letters, numbers and hyphens only."
-          );
-
-          return;
-        }
-
-        try {
-          setSaving(true);
-          setError("");
-
-          if (
-            editingCategory
-          ) {
-            await updateCategory(
-              editingCategory._id,
-              {
-                name:
-                  cleanedName,
-
-                slug:
-                  cleanedSlug,
-              }
-            );
-          } else {
-            await createCategory(
-              {
-                name:
-                  cleanedName,
-
-                slug:
-                  cleanedSlug,
-              }
-            );
-          }
-
-          closeModal();
-
-          await loadCategories();
-        } catch (
-          saveError
-        ) {
-          setError(
-            saveError instanceof
-              Error
-              ? saveError.message
-              : "Unable to save category."
-          );
-        } finally {
-          setSaving(false);
-        }
-      };
-
-    const handleDeactivate =
-      async () => {
-        if (
-          !categoryToDeactivate
-        ) {
-          return;
-        }
-
-        try {
-          setProcessingId(
-            categoryToDeactivate._id
-          );
-
-          setError("");
-
-          await deactivateCategory(
-            categoryToDeactivate._id
-          );
-
-          setCategoryToDeactivate(
-            null
-          );
-
-          await loadCategories();
-        } catch (
-          deactivateError
-        ) {
-          setError(
-            deactivateError instanceof
-              Error
-              ? deactivateError.message
-              : "Unable to deactivate category."
-          );
-        } finally {
-          setProcessingId(
-            null
-          );
-        }
-      };
-
-    const handleReactivate =
-      async (
-        category: Category
-      ) => {
-        try {
-          setProcessingId(
-            category._id
-          );
-
-          setError("");
-
           await updateCategory(
-            category._id,
+            editingCategory._id,
             {
-              isActive:
-                true,
+              name:
+                cleanedName,
+
+              slug:
+                cleanedSlug,
             }
           );
+        } else {
+          await createCategory(
+            {
+              name:
+                cleanedName,
 
-          await loadCategories();
-        } catch (
-          activateError
-        ) {
-          setError(
-            activateError instanceof
-              Error
-              ? activateError.message
-              : "Unable to activate category."
-          );
-        } finally {
-          setProcessingId(
-            null
+              slug:
+                cleanedSlug,
+            }
           );
         }
-      };
 
-    return (
+        /*
+         * Close directly after
+         * successful save.
+         */
+        resetModal();
+
+        await loadCategories();
+      } catch (
+        saveError
+      ) {
+        setError(
+          saveError instanceof
+            Error
+            ? saveError.message
+            : "Unable to save category."
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
+
+  /* ======================================================
+     DEACTIVATE
+  ====================================================== */
+
+  const handleDeactivate =
+    async () => {
+      if (
+        !categoryToDeactivate
+      ) {
+        return;
+      }
+
+      try {
+        setProcessingId(
+          categoryToDeactivate._id
+        );
+
+        setError("");
+
+        await deactivateCategory(
+          categoryToDeactivate._id
+        );
+
+        setCategoryToDeactivate(
+          null
+        );
+
+        await loadCategories();
+      } catch (
+        deactivateError
+      ) {
+        setError(
+          deactivateError instanceof
+            Error
+            ? deactivateError.message
+            : "Unable to deactivate category."
+        );
+      } finally {
+        setProcessingId(
+          null
+        );
+      }
+    };
+
+  /* ======================================================
+     REACTIVATE
+  ====================================================== */
+
+  const handleReactivate =
+    async (
+      category: Category
+    ) => {
+      try {
+        setProcessingId(
+          category._id
+        );
+
+        setError("");
+
+        await updateCategory(
+          category._id,
+          {
+            isActive: true,
+          }
+        );
+
+        await loadCategories();
+      } catch (
+        activateError
+      ) {
+        setError(
+          activateError instanceof
+            Error
+            ? activateError.message
+            : "Unable to activate category."
+        );
+      } finally {
+        setProcessingId(
+          null
+        );
+      }
+    };
+
+  /* ======================================================
+     PAGE
+  ====================================================== */
+
+  return (
+    <>
       <div className="space-y-6">
-        {/* Header */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <section className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-black/40">
-              Admin Portal
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+              Marketplace
+              Configuration
             </p>
 
-            <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
               Categories
             </h1>
 
-            <p className="mt-2 text-sm text-black/50">
+            <p className="mt-2 max-w-[560px] text-sm leading-6 text-primary-500">
               Manage product
-              categories used
-              across the
+              categories available
+              across the NOVA
               marketplace.
             </p>
           </div>
@@ -421,7 +508,7 @@ const AdminCategoriesPage =
             onClick={
               openAddModal
             }
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 text-sm font-semibold text-white transition hover:bg-black/80"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             <Plus
               size={17}
@@ -429,24 +516,100 @@ const AdminCategoriesPage =
 
             Add Category
           </button>
-        </div>
+        </section>
 
-        {/* Error */}
+        {/* =================================================
+            OVERVIEW
+        ================================================= */}
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          {/* Total */}
+
+          <div className="flex items-center gap-4 rounded-xl border border-border bg-white p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+              <Shapes
+                size={18}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-primary-400">
+                Total
+              </p>
+
+              <p className="mt-0.5 text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : categories.length}
+              </p>
+            </div>
+          </div>
+
+          {/* Active */}
+
+          <div className="flex items-center gap-4 rounded-xl border border-border bg-white p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-soft text-success">
+              <CheckCircle2
+                size={18}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-primary-400">
+                Active
+              </p>
+
+              <p className="mt-0.5 text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : activeCount}
+              </p>
+            </div>
+          </div>
+
+          {/* Inactive */}
+
+          <div className="flex items-center gap-4 rounded-xl border border-border bg-white p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-500">
+              <CircleOff
+                size={18}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-primary-400">
+                Inactive
+              </p>
+
+              <p className="mt-0.5 text-xl font-black text-primary-900">
+                {loading
+                  ? "—"
+                  : inactiveCount}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* =================================================
+            PAGE ERROR
+        ================================================= */}
 
         {error &&
           !modalOpen && (
-            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
               {error}
             </div>
           )}
 
-        {/* Search */}
+        {/* =================================================
+            SEARCH
+        ================================================= */}
 
-        <div className="rounded-2xl border border-black/10 bg-white p-4">
-          <div className="relative max-w-md">
+        <section className="rounded-2xl border border-border bg-white p-4">
+          <div className="relative max-w-lg">
             <Search
               size={17}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-black/35"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-300"
             />
 
             <input
@@ -461,31 +624,62 @@ const AdminCategoriesPage =
                     .value
                 )
               }
-              placeholder="Search categories..."
-              className="h-11 w-full rounded-xl border border-black/10 bg-[#fafafa] pl-11 pr-4 text-sm outline-none transition focus:border-black/30"
+              placeholder="Search by category name or slug..."
+              className="h-11 w-full rounded-xl border border-border bg-primary-50/60 pl-11 pr-4 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-50"
             />
           </div>
-        </div>
+        </section>
 
-        {/* Table */}
+        {/* =================================================
+            TABLE
+        ================================================= */}
 
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
-          <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
-            <p className="text-sm font-semibold">
-              {
-                filteredCategories.length
-              }{" "}
-              {filteredCategories.length ===
-              1
-                ? "Category"
-                : "Categories"}
-            </p>
+        <section className="overflow-hidden rounded-2xl border border-border bg-white">
+          {/* Table Header */}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                <Shapes
+                  size={17}
+                />
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-primary-900">
+                  Category
+                  Management
+                </p>
+
+                <p className="text-xs text-primary-400">
+                  {
+                    filteredCategories.length
+                  }{" "}
+                  {filteredCategories.length ===
+                  1
+                    ? "category"
+                    : "categories"}
+                </p>
+              </div>
+            </div>
+
+            {search && (
+              <button
+                type="button"
+                onClick={() =>
+                  setSearch("")
+                }
+                className="text-xs font-semibold text-brand-700 transition hover:text-brand-800"
+              >
+                Clear Search
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px]">
-              <thead className="bg-[#fafafa]">
-                <tr className="text-left text-xs uppercase tracking-wider text-black/40">
+              <thead className="bg-primary-50/70">
+                <tr className="text-left text-[10px] font-bold uppercase tracking-[0.12em] text-primary-400">
                   <th className="px-5 py-4">
                     Category
                   </th>
@@ -504,31 +698,51 @@ const AdminCategoriesPage =
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody className="divide-y divide-border">
+                {/* Loading */}
+
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={
-                        4
-                      }
-                      className="px-5 py-12 text-center text-sm text-black/40"
+                      colSpan={4}
+                      className="px-5 py-16 text-center"
                     >
-                      Loading
-                      categories...
+                      <div className="mx-auto flex w-fit items-center gap-3 text-sm text-primary-400">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+
+                        Loading
+                        categories...
+                      </div>
                     </td>
                   </tr>
                 ) : filteredCategories.length ===
                   0 ? (
+                  /* Empty */
+
                   <tr>
                     <td
-                      colSpan={
-                        4
-                      }
-                      className="px-5 py-12 text-center text-sm text-black/40"
+                      colSpan={4}
+                      className="px-5 py-16"
                     >
-                      No
-                      categories
-                      found.
+                      <div className="mx-auto flex max-w-sm flex-col items-center text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-300">
+                          <Shapes
+                            size={22}
+                          />
+                        </div>
+
+                        <p className="mt-4 text-sm font-bold text-primary-900">
+                          No categories
+                          found
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-primary-400">
+                          Try another
+                          search or
+                          create a new
+                          category.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -540,30 +754,46 @@ const AdminCategoriesPage =
                         key={
                           category._id
                         }
-                        className="border-t border-black/5"
+                        className="transition hover:bg-primary-50/45"
                       >
-                        <td className="px-5 py-4">
-                          <p className="text-sm font-semibold">
-                            {
-                              category.name
-                            }
-                          </p>
-                        </td>
+                        {/* Name */}
 
                         <td className="px-5 py-4">
-                          <span className="rounded-lg bg-[#f5f5f5] px-3 py-1.5 text-xs font-medium text-black/60">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                              <Shapes
+                                size={
+                                  15
+                                }
+                              />
+                            </div>
+
+                            <p className="text-sm font-bold text-primary-900">
+                              {
+                                category.name
+                              }
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Slug */}
+
+                        <td className="px-5 py-4">
+                          <span className="inline-flex rounded-lg bg-primary-50 px-3 py-1.5 font-mono text-xs font-medium text-primary-500">
                             {
                               category.slug
                             }
                           </span>
                         </td>
 
+                        {/* Status */}
+
                         <td className="px-5 py-4">
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            className={`inline-flex rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] ${
                               category.isActive
-                                ? "bg-green-50 text-green-700"
-                                : "bg-gray-100 text-gray-500"
+                                ? "bg-success-soft text-success"
+                                : "bg-primary-100 text-primary-500"
                             }`}
                           >
                             {category.isActive
@@ -572,46 +802,57 @@ const AdminCategoriesPage =
                           </span>
                         </td>
 
+                        {/* Actions */}
+
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2">
+                            {/* Edit */}
+
                             <button
                               type="button"
-                              title="Edit"
+                              title="Edit category"
+                              aria-label="Edit category"
                               onClick={() =>
                                 openEditModal(
                                   category
                                 )
                               }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 transition hover:bg-[#f5f5f5]"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-primary-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                             >
                               <Pencil
-                                size={
-                                  15
-                                }
+                                size={15}
                               />
                             </button>
+
+                            {/* Active */}
 
                             {category.isActive ? (
                               <button
                                 type="button"
-                                title="Deactivate"
+                                title="Deactivate category"
+                                aria-label="Deactivate category"
+                                disabled={
+                                  processingId ===
+                                  category._id
+                                }
                                 onClick={() =>
                                   setCategoryToDeactivate(
                                     category
                                   )
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-500 transition hover:bg-red-50"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-danger/15 bg-white text-danger transition hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-40"
                               >
                                 <Trash2
-                                  size={
-                                    15
-                                  }
+                                  size={15}
                                 />
                               </button>
                             ) : (
+                              /* Inactive */
+
                               <button
                                 type="button"
-                                title="Reactivate"
+                                title="Reactivate category"
+                                aria-label="Reactivate category"
                                 disabled={
                                   processingId ===
                                   category._id
@@ -621,12 +862,10 @@ const AdminCategoriesPage =
                                     category
                                   )
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-green-100 text-green-600 transition hover:bg-green-50 disabled:opacity-40"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-success/15 bg-white text-success transition hover:bg-success-soft disabled:cursor-not-allowed disabled:opacity-40"
                               >
                                 <RotateCcw
-                                  size={
-                                    15
-                                  }
+                                  size={15}
                                 />
                               </button>
                             )}
@@ -639,216 +878,262 @@ const AdminCategoriesPage =
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
+      </div>
 
-        {/* Add/Edit Modal */}
+      {/* =====================================================
+          ADD / EDIT MODAL
+      ====================================================== */}
 
-        {modalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-lg rounded-[24px] bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-black/10 px-6 py-5">
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-primary-900/40 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-white shadow-2xl">
+            {/* Header */}
+
+            <div className="flex items-center justify-between border-b border-border px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <Shapes
+                    size={18}
+                  />
+                </div>
+
                 <div>
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-xl font-black text-primary-900">
                     {editingCategory
                       ? "Edit Category"
                       : "Add Category"}
                   </h2>
 
-                  <p className="mt-1 text-xs text-black/40">
+                  <p className="mt-0.5 text-xs text-primary-400">
                     {editingCategory
-                      ? "Update category information."
+                      ? "Update marketplace category information."
                       : "Create a new marketplace category."}
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={
-                    closeModal
-                  }
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f5]"
-                >
-                  <X
-                    size={
-                      17
-                    }
-                  />
-                </button>
               </div>
 
-              <form
-                onSubmit={
-                  handleSubmit
+              <button
+                type="button"
+                aria-label="Close modal"
+                disabled={
+                  saving
                 }
-                className="p-6"
+                onClick={
+                  closeModal
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-full text-primary-400 transition hover:bg-primary-50 hover:text-primary-900 disabled:opacity-40"
               >
-                <div>
-                  <label className="mb-2 block text-sm font-medium">
-                    Category
-                    Name
-                  </label>
-
-                  <input
-                    value={
-                      name
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      handleNameChange(
-                        event
-                          .target
-                          .value
-                      )
-                    }
-                    placeholder="e.g. Sports & Outdoors"
-                    className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-black/40"
-                  />
-                </div>
-
-                <div className="mt-5">
-                  <label className="mb-2 block text-sm font-medium">
-                    Slug
-                  </label>
-
-                  <input
-                    value={
-                      slug
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setSlug(
-                        slugify(
-                          event
-                            .target
-                            .value
-                        )
-                      )
-                    }
-                    placeholder="sports-outdoors"
-                    className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-black/40"
-                  />
-
-                  <p className="mt-2 text-xs text-black/40">
-                    Used in
-                    URLs and
-                    filtering.
-                  </p>
-                </div>
-
-                {error && (
-                  <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {
-                      error
-                    }
-                  </div>
-                )}
-
-                <div className="mt-7 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    disabled={
-                      saving
-                    }
-                    onClick={
-                      closeModal
-                    }
-                    className="h-11 rounded-xl border border-black/10 px-5 text-sm font-semibold transition hover:bg-[#f5f5f5]"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={
-                      saving
-                    }
-                    className="h-11 rounded-xl bg-black px-6 text-sm font-semibold text-white transition hover:bg-black/80 disabled:opacity-50"
-                  >
-                    {saving
-                      ? "Saving..."
-                      : editingCategory
-                        ? "Save Changes"
-                        : "Create Category"}
-                  </button>
-                </div>
-              </form>
+                <X
+                  size={17}
+                />
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* Deactivate confirmation */}
+            {/* Form */}
 
-        {categoryToDeactivate && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-[24px] bg-white p-7 shadow-2xl">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-                <Trash2
-                  size={
-                    20
+            <form
+              onSubmit={
+                handleSubmit
+              }
+              className="p-6"
+            >
+              {/* Name */}
+
+              <div>
+                <label
+                  htmlFor="categoryName"
+                  className="mb-2 block text-sm font-semibold text-primary-800"
+                >
+                  Category Name
+                </label>
+
+                <input
+                  id="categoryName"
+                  value={
+                    name
                   }
+                  onChange={(
+                    event
+                  ) =>
+                    handleNameChange(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="e.g. Sports & Outdoors"
+                  className="h-11 w-full rounded-xl border border-border bg-white px-4 text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
                 />
               </div>
 
-              <h2 className="mt-5 text-xl font-bold">
-                Deactivate
-                category?
-              </h2>
+              {/* Slug */}
 
-              <p className="mt-2 text-sm leading-6 text-black/50">
-                <span className="font-semibold text-black">
-                  {
-                    categoryToDeactivate.name
+              <div className="mt-5">
+                <label
+                  htmlFor="categorySlug"
+                  className="mb-2 block text-sm font-semibold text-primary-800"
+                >
+                  Slug
+                </label>
+
+                <input
+                  id="categorySlug"
+                  value={
+                    slug
                   }
-                </span>{" "}
-                will no
-                longer be
-                available
-                as an active
-                category.
-              </p>
+                  onChange={(
+                    event
+                  ) =>
+                    setSlug(
+                      slugify(
+                        event.target
+                          .value
+                      )
+                    )
+                  }
+                  placeholder="sports-outdoors"
+                  className="h-11 w-full rounded-xl border border-border bg-white px-4 font-mono text-sm text-primary-900 outline-none transition placeholder:text-primary-300 focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
+                />
 
-              <div className="mt-7 flex justify-end gap-3">
+                <p className="mt-2 text-xs leading-5 text-primary-400">
+                  Used for URLs,
+                  filtering and
+                  category
+                  identification.
+                </p>
+              </div>
+
+              {/* Error */}
+
+              {error && (
+                <div className="mt-5 rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+                  {error}
+                </div>
+              )}
+
+              {/* Actions */}
+
+              <div className="mt-7 flex justify-end gap-3 border-t border-border pt-5">
                 <button
                   type="button"
                   disabled={
-                    Boolean(
-                      processingId
-                    )
+                    saving
                   }
-                  onClick={() =>
-                    setCategoryToDeactivate(
-                      null
-                    )
+                  onClick={
+                    closeModal
                   }
-                  className="h-11 rounded-xl border border-black/10 px-5 text-sm font-semibold"
+                  className="h-10 rounded-xl border border-border px-5 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
-                  type="button"
+                  type="submit"
                   disabled={
-                    Boolean(
-                      processingId
-                    )
+                    saving
                   }
-                  onClick={() =>
-                    void handleDeactivate()
-                  }
-                  className="h-11 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="h-10 min-w-[135px] rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {processingId
-                    ? "Deactivating..."
-                    : "Deactivate"}
+                  {saving
+                    ? "Saving..."
+                    : editingCategory
+                      ? "Save Changes"
+                      : "Create Category"}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          DEACTIVATE CONFIRMATION
+      ====================================================== */}
+
+      {categoryToDeactivate && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-primary-900/40 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-danger-soft text-danger">
+              <Trash2
+                size={19}
+              />
+            </div>
+
+            <h2 className="mt-5 text-xl font-black tracking-tight text-primary-900">
+              Deactivate
+              Category?
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-primary-500">
+              <span className="font-bold text-primary-900">
+                {
+                  categoryToDeactivate.name
+                }
+              </span>{" "}
+              will no longer be
+              available as an
+              active marketplace
+              category.
+            </p>
+
+            <div className="mt-4 rounded-xl bg-primary-50 px-4 py-3">
+              <p className="text-xs leading-5 text-primary-500">
+                This does not
+                permanently delete
+                the category. It
+                can be reactivated
+                later.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={
+                  Boolean(
+                    processingId
+                  )
+                }
+                onClick={() =>
+                  setCategoryToDeactivate(
+                    null
+                  )
+                }
+                className="h-10 rounded-xl border border-border px-5 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  Boolean(
+                    processingId
+                  )
+                }
+                onClick={() =>
+                  void handleDeactivate()
+                }
+                className="h-10 min-w-[120px] rounded-xl bg-danger px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {processingId
+                  ? "Deactivating..."
+                  : "Deactivate"}
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      )}
+    </>
+  );
+};
 
 export default AdminCategoriesPage;

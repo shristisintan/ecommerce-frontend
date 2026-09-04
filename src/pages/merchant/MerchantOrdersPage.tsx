@@ -6,7 +6,10 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  CircleDollarSign,
   PackageCheck,
+  ShoppingBag,
+  UserRound,
 } from "lucide-react";
 
 import {
@@ -19,185 +22,212 @@ import type {
 
 const PAGE_LIMIT = 5;
 
-const MerchantOrdersPage =
-  () => {
-    const [
-      orders,
-      setOrders,
-    ] =
-      useState<MerchantOrder[]>([]);
+const MerchantOrdersPage = () => {
+  const [
+    orders,
+    setOrders,
+  ] =
+    useState<MerchantOrder[]>([]);
 
-    const [
-      loading,
-      setLoading,
-    ] = useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-    const [
-      error,
-      setError,
-    ] = useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-    const [
-      page,
-      setPage,
-    ] = useState(1);
+  const [
+    page,
+    setPage,
+  ] = useState(1);
 
-    const [
-      total,
-      setTotal,
-    ] = useState(0);
+  const [
+    total,
+    setTotal,
+  ] = useState(0);
 
-    const [
-      totalPages,
-      setTotalPages,
-    ] = useState(1);
+  const [
+    totalPages,
+    setTotalPages,
+  ] = useState(1);
 
-    const [
-      orderStatus,
-      setOrderStatus,
-    ] = useState("");
+  const [
+    orderStatus,
+    setOrderStatus,
+  ] = useState("");
 
-    const [
-      paymentStatus,
-      setPaymentStatus,
-    ] = useState("");
+  const [
+    paymentStatus,
+    setPaymentStatus,
+  ] = useState("");
 
-    useEffect(() => {
-      const loadOrders =
-        async () => {
-          try {
-            setLoading(true);
-            setError("");
+  /* ======================================================
+     LOAD ORDERS
+  ====================================================== */
 
-            const result =
-              await getMerchantOrders({
-                page,
+  useEffect(() => {
+    const loadOrders =
+      async () => {
+        try {
+          setLoading(true);
 
-                limit:
-                  PAGE_LIMIT,
+          setError("");
 
-                orderStatus:
-                  orderStatus ||
-                  undefined,
+          const result =
+            await getMerchantOrders({
+              page,
 
-                paymentStatus:
-                  paymentStatus ||
-                  undefined,
-              });
+              limit:
+                PAGE_LIMIT,
 
-            setOrders(
-              result.data
-            );
+              orderStatus:
+                orderStatus ||
+                undefined,
 
-            setTotal(
+              paymentStatus:
+                paymentStatus ||
+                undefined,
+            });
+
+          setOrders(
+            result.data
+          );
+
+          setTotal(
+            result.pagination
+              .total
+          );
+
+          setTotalPages(
+            Math.max(
               result.pagination
-                .total
-            );
-
-            setTotalPages(
-              Math.max(
-                result.pagination
-                  .totalPages,
-                1
-              )
-            );
-          } catch (
-            loadError
-          ) {
-            setError(
-              loadError instanceof
-                Error
-                ? loadError.message
-                : "Unable to load orders."
-            );
-          } finally {
-            setLoading(false);
-          }
-        };
-
-      void loadOrders();
-    }, [
-      page,
-      orderStatus,
-      paymentStatus,
-    ]);
-
-    const statusBadge = (
-      status: string
-    ) => {
-      switch (status) {
-        case "PAID":
-          return "bg-green-50 text-green-700";
-
-        case "COMPLETED":
-          return "bg-green-50 text-green-700";
-
-        case "PROCESSING":
-          return "bg-blue-50 text-blue-700";
-
-        case "PENDING":
-        case "PENDING_PAYMENT":
-          return "bg-amber-50 text-amber-700";
-
-        case "FAILED":
-        case "PAYMENT_FAILED":
-          return "bg-red-50 text-red-600";
-
-        case "CANCELLED":
-          return "bg-gray-100 text-gray-600";
-
-        default:
-          return "bg-gray-100 text-gray-600";
-      }
-    };
-
-    const formatStatus = (
-      status: string
-    ) =>
-      status
-        .replace(
-          /_/g,
-          " "
-        )
-        .toLowerCase()
-        .replace(
-          /\b\w/g,
-          (letter) =>
-            letter.toUpperCase()
-        );
-
-    const formatDate = (
-      value: string
-    ) =>
-      new Intl.DateTimeFormat(
-        "en-NP",
-        {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
+                .totalPages,
+              1
+            )
+          );
+        } catch (
+          loadError
+        ) {
+          setError(
+            loadError instanceof
+              Error
+              ? loadError.message
+              : "Unable to load orders."
+          );
+        } finally {
+          setLoading(false);
         }
-      ).format(
-        new Date(value)
+      };
+
+    void loadOrders();
+  }, [
+    page,
+    orderStatus,
+    paymentStatus,
+  ]);
+
+  /* ======================================================
+     STATUS HELPERS
+  ====================================================== */
+
+  const statusBadge = (
+    status: string
+  ) => {
+    switch (status) {
+      case "PAID":
+      case "COMPLETED":
+        return "bg-success-soft text-success";
+
+      case "PROCESSING":
+        return "bg-info-soft text-info";
+
+      case "PENDING":
+      case "PENDING_PAYMENT":
+        return "bg-warning-soft text-warning";
+
+      case "FAILED":
+      case "PAYMENT_FAILED":
+        return "bg-danger-soft text-danger";
+
+      case "CANCELLED":
+        return "bg-primary-100 text-primary-500";
+
+      default:
+        return "bg-primary-100 text-primary-500";
+    }
+  };
+
+  const formatStatus = (
+    status: string
+  ) =>
+    status
+      .replace(
+        /_/g,
+        " "
+      )
+      .toLowerCase()
+      .replace(
+        /\b\w/g,
+        (
+          letter
+        ) =>
+          letter.toUpperCase()
       );
 
-    return (
-      <div className="space-y-6">
-        {/* Header */}
+  const formatDate = (
+    value: string
+  ) =>
+    new Intl.DateTimeFormat(
+      "en-NP",
+      {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }
+    ).format(
+      new Date(value)
+    );
 
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">
-            Orders
-          </h1>
+  const filtersActive =
+    Boolean(
+      orderStatus ||
+        paymentStatus
+    );
 
-          <p className="mt-1 text-sm text-black/45">
-            View orders containing
-            products from your store.
-          </p>
-        </div>
+  return (
+    <div className="space-y-6">
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-        {/* Filters */}
+      <section>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
+          Store Orders
+        </p>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-white p-4 md:flex-row">
+        <h1 className="mt-2 text-3xl font-black tracking-[-0.045em] text-primary-900 sm:text-4xl">
+          Orders
+        </h1>
+
+        <p className="mt-2 max-w-[560px] text-sm leading-6 text-primary-500">
+          Review marketplace
+          orders containing
+          products from your
+          store.
+        </p>
+      </section>
+
+      {/* =================================================
+          FILTERS
+      ================================================= */}
+
+      <section className="rounded-2xl border border-border bg-white p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          {/* Order Status */}
+
           <select
             value={
               orderStatus
@@ -206,12 +236,13 @@ const MerchantOrdersPage =
               event
             ) => {
               setOrderStatus(
-                event.target.value
+                event.target
+                  .value
               );
 
               setPage(1);
             }}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+            className="h-11 min-w-[210px] rounded-xl border border-border bg-white px-4 text-sm font-medium text-primary-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
           >
             <option value="">
               All Order Statuses
@@ -242,6 +273,8 @@ const MerchantOrdersPage =
             </option>
           </select>
 
+          {/* Payment Status */}
+
           <select
             value={
               paymentStatus
@@ -250,12 +283,13 @@ const MerchantOrdersPage =
               event
             ) => {
               setPaymentStatus(
-                event.target.value
+                event.target
+                  .value
               );
 
               setPage(1);
             }}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+            className="h-11 min-w-[190px] rounded-xl border border-border bg-white px-4 text-sm font-medium text-primary-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-50"
           >
             <option value="">
               All Payments
@@ -273,243 +307,402 @@ const MerchantOrdersPage =
               Failed
             </option>
           </select>
+
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setOrderStatus("");
+
+                setPaymentStatus("");
+
+                setPage(1);
+              }}
+              className="h-11 rounded-xl px-4 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
+      </section>
+
+      {/* =================================================
+          ORDER TABLE
+      ================================================= */}
+
+      <section className="overflow-hidden rounded-2xl border border-border bg-white">
+        {/* Table heading */}
+
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info-soft text-info">
+              <ShoppingBag
+                size={17}
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-primary-900">
+                Marketplace Orders
+              </p>
+
+              <p className="text-xs text-primary-400">
+                {total}{" "}
+                {total === 1
+                  ? "order"
+                  : "orders"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error */}
+
+        {error && (
+          <div className="m-5 rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+            {error}
+          </div>
+        )}
 
         {/* Table */}
 
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
-          <div className="border-b border-black/10 px-5 py-4">
-            <p className="text-sm font-semibold">
-              {total}{" "}
-              {total === 1
-                ? "Order"
-                : "Orders"}
-            </p>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1080px]">
+            <thead className="bg-primary-50/70">
+              <tr className="text-left text-[10px] font-bold uppercase tracking-[0.12em] text-primary-400">
+                <th className="px-5 py-4">
+                  Order
+                </th>
 
-          {error && (
-            <div className="m-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+                <th className="px-5 py-4">
+                  Customer
+                </th>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px]">
-              <thead className="bg-[#fafafa]">
-                <tr className="text-left text-xs uppercase tracking-wider text-black/40">
-                  <th className="px-5 py-4">
-                    Order
-                  </th>
+                <th className="px-5 py-4">
+                  Products
+                </th>
 
-                  <th className="px-5 py-4">
-                    Customer
-                  </th>
+                <th className="px-5 py-4">
+                  Merchant Amount
+                </th>
 
-                  <th className="px-5 py-4">
-                    Products
-                  </th>
+                <th className="px-5 py-4">
+                  Payment
+                </th>
 
-                  <th className="px-5 py-4">
-                    Amount
-                  </th>
+                <th className="px-5 py-4">
+                  Order Status
+                </th>
 
-                  <th className="px-5 py-4">
-                    Payment
-                  </th>
+                <th className="px-5 py-4">
+                  Date
+                </th>
+              </tr>
+            </thead>
 
-                  <th className="px-5 py-4">
-                    Status
-                  </th>
+            <tbody className="divide-y divide-border">
+              {/* Loading */}
 
-                  <th className="px-5 py-4">
-                    Date
-                  </th>
-                </tr>
-              </thead>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-5 py-16 text-center"
+                  >
+                    <div className="mx-auto flex w-fit items-center gap-3 text-sm text-primary-400">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
 
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-12 text-center text-sm text-black/40"
-                    >
                       Loading
                       orders...
-                    </td>
-                  </tr>
-                ) : orders.length ===
-                  0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-14 text-center"
-                    >
-                      <PackageCheck
-                        size={30}
-                        className="mx-auto text-black/20"
-                      />
+                    </div>
+                  </td>
+                </tr>
+              ) : orders.length ===
+                0 ? (
+                /* Empty */
 
-                      <p className="mt-3 text-sm font-semibold">
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-5 py-16"
+                  >
+                    <div className="mx-auto flex max-w-sm flex-col items-center text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-300">
+                        <PackageCheck
+                          size={22}
+                        />
+                      </div>
+
+                      <p className="mt-4 text-sm font-bold text-primary-900">
                         No orders
                         found
                       </p>
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map(
-                    (order) => (
-                      <tr
-                        key={
-                          order._id
-                        }
-                        className="border-t border-black/5"
-                      >
-                        <td className="px-5 py-4">
-                          <p className="text-sm font-semibold">
+
+                      <p className="mt-1 text-xs leading-5 text-primary-400">
+                        No orders
+                        currently match
+                        the selected
+                        filters.
+                      </p>
+
+                      {filtersActive && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOrderStatus(
+                              ""
+                            );
+
+                            setPaymentStatus(
+                              ""
+                            );
+
+                            setPage(
+                              1
+                            );
+                          }}
+                          className="mt-4 text-xs font-semibold text-brand-700"
+                        >
+                          Clear
+                          Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                orders.map(
+                  (
+                    order
+                  ) => (
+                    <tr
+                      key={
+                        order._id
+                      }
+                      className="transition hover:bg-primary-50/45"
+                    >
+                      {/* Order */}
+
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                            <PackageCheck
+                              size={
+                                16
+                              }
+                            />
+                          </div>
+
+                          <p className="text-sm font-bold text-primary-900">
                             #
                             {order._id
-                              .slice(-8)
+                              .slice(
+                                -8
+                              )
                               .toUpperCase()}
                           </p>
-                        </td>
+                        </div>
+                      </td>
 
-                        <td className="px-5 py-4">
-                          <p className="text-sm font-semibold">
-                            {
-                              order
-                                .buyerId
-                                .name
-                            }
-                          </p>
+                      {/* Customer */}
 
-                          <p className="mt-1 text-xs text-black/40">
-                            {
-                              order
-                                .buyerId
-                                .email
-                            }
-                          </p>
-                        </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-400">
+                            <UserRound
+                              size={
+                                14
+                              }
+                            />
+                          </div>
 
-                        <td className="px-5 py-4">
-                          <div className="space-y-1">
-                            {order.items.map(
-                              (
-                                item,
-                                index
-                              ) => (
-                                <p
-                                  key={`${order._id}-${index}`}
-                                  className="text-sm text-black/65"
-                                >
+                          <div>
+                            <p className="text-sm font-semibold text-primary-900">
+                              {
+                                order
+                                  .buyerId
+                                  .name
+                              }
+                            </p>
+
+                            <p className="mt-1 text-xs text-primary-400">
+                              {
+                                order
+                                  .buyerId
+                                  .email
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Products */}
+
+                      <td className="px-5 py-4">
+                        <div className="max-w-[260px] space-y-1.5">
+                          {order.items.map(
+                            (
+                              item,
+                              index
+                            ) => (
+                              <p
+                                key={`${order._id}-${index}`}
+                                className="text-sm text-primary-600"
+                              >
+                                <span className="font-semibold text-primary-800">
                                   {
                                     item.productName
-                                  }{" "}
+                                  }
+                                </span>
+
+                                <span className="ml-1 text-primary-400">
                                   ×{" "}
                                   {
                                     item.quantity
                                   }
-                                </p>
-                              )
-                            )}
-                          </div>
-                        </td>
+                                </span>
+                              </p>
+                            )
+                          )}
+                        </div>
+                      </td>
 
-                        <td className="px-5 py-4 text-sm font-semibold">
-                          NPR{" "}
-                          {order.merchantTotal.toLocaleString()}
-                        </td>
+                      {/* Merchant Amount */}
 
-                        <td className="px-5 py-4">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadge(
-                              order.paymentStatus
-                            )}`}
-                          >
-                            {formatStatus(
-                              order.paymentStatus
-                            )}
-                          </span>
-                        </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <CircleDollarSign
+                            size={
+                              15
+                            }
+                            className="text-brand-600"
+                          />
 
-                        <td className="px-5 py-4">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadge(
-                              order.orderStatus
-                            )}`}
-                          >
-                            {formatStatus(
-                              order.orderStatus
+                          <span className="text-sm font-bold text-primary-900">
+                            NPR{" "}
+                            {order.merchantTotal.toLocaleString(
+                              "en-NP"
                             )}
                           </span>
-                        </td>
+                        </div>
+                      </td>
 
-                        <td className="px-5 py-4 text-sm text-black/55">
+                      {/* Payment */}
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] ${statusBadge(
+                            order.paymentStatus
+                          )}`}
+                        >
+                          {formatStatus(
+                            order.paymentStatus
+                          )}
+                        </span>
+                      </td>
+
+                      {/* Order Status */}
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] ${statusBadge(
+                            order.orderStatus
+                          )}`}
+                        >
+                          {formatStatus(
+                            order.orderStatus
+                          )}
+                        </span>
+                      </td>
+
+                      {/* Date */}
+
+                      <td className="px-5 py-4">
+                        <span className="text-sm font-medium text-primary-500">
                           {formatDate(
                             order.createdAt
                           )}
-                        </td>
-                      </tr>
-                    )
+                        </span>
+                      </td>
+                    </tr>
                   )
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-black/10 px-5 py-4">
-              <p className="text-sm text-black/45">
-                Page {page} of{" "}
-                {totalPages}
-              </p>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={
-                    page <= 1
-                  }
-                  onClick={() =>
-                    setPage(
-                      (current) =>
-                        current - 1
-                    )
-                  }
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 disabled:opacity-30"
-                >
-                  <ChevronLeft
-                    size={17}
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={
-                    page >=
-                    totalPages
-                  }
-                  onClick={() =>
-                    setPage(
-                      (current) =>
-                        current + 1
-                    )
-                  }
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 disabled:opacity-30"
-                >
-                  <ChevronRight
-                    size={17}
-                  />
-                </button>
-              </div>
-            </div>
-          )}
+                )
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
-    );
-  };
+
+        {/* =================================================
+            PAGINATION
+        ================================================= */}
+
+        {totalPages >
+          1 && (
+          <div className="flex items-center justify-between border-t border-border px-5 py-4">
+            <p className="text-xs font-medium text-primary-400 sm:text-sm">
+              Page{" "}
+              <span className="font-bold text-primary-900">
+                {page}
+              </span>{" "}
+              of{" "}
+              <span className="font-bold text-primary-900">
+                {
+                  totalPages
+                }
+              </span>
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                aria-label="Previous page"
+                disabled={
+                  page <= 1
+                }
+                onClick={() =>
+                  setPage(
+                    (
+                      current
+                    ) =>
+                      current -
+                      1
+                  )
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-primary-600 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronLeft
+                  size={17}
+                />
+              </button>
+
+              <button
+                type="button"
+                aria-label="Next page"
+                disabled={
+                  page >=
+                  totalPages
+                }
+                onClick={() =>
+                  setPage(
+                    (
+                      current
+                    ) =>
+                      current +
+                      1
+                  )
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-primary-600 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronRight
+                  size={17}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
 
 export default MerchantOrdersPage;
